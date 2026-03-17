@@ -7,6 +7,12 @@ const Users = () => {
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [localRoles, setLocalRoles] = useState([]);
+
+  // Roles değiştikçe veya sayfa ilk açıldığında yerel kopyayı güncelle
+  React.useEffect(() => {
+    setLocalRoles([...roles]);
+  }, [roles]);
 
   const permissionList = [
     { key: 'viewDashboard', label: 'Analiz Paneli Görüntüleme' },
@@ -81,9 +87,18 @@ const Users = () => {
   };
 
   const handlePermissionChange = (roleLevel, permKey, value) => {
-    const role = roles.find(r => r.level === roleLevel);
-    const newPermissions = { ...role.permissions, [permKey]: value };
-    updateRolePermissions(roleLevel, newPermissions);
+    setLocalRoles(prev => prev.map(r => 
+      r.level === roleLevel 
+        ? { ...r, permissions: { ...r.permissions, [permKey]: value } }
+        : r
+    ));
+  };
+
+  const handleSavePermissions = () => {
+    localRoles.forEach(role => {
+      updateRolePermissions(role.level, role.permissions);
+    });
+    alert('Yetki matrisi başarıyla güncellendi!');
   };
 
   return (
@@ -252,16 +267,21 @@ const Users = () => {
 
       {/* Permission Matrix */}
       <div className="card" style={{ marginTop: '24px' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-          <Settings size={20} className="text-secondary" />
-          Detaylı Yetki Matrisi
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <Settings size={20} className="text-secondary" />
+            Detaylı Yetki Matrisi
+          </h2>
+          <button onClick={handleSavePermissions} className="btn btn-primary">
+            <ShieldAlert size={16} /> Yetki Değişikliklerini Kaydet
+          </button>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table className="permission-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Yetki / Özellik</th>
-                {roles.sort((a,b) => a.level - b.level).map(role => (
+                {localRoles.sort((a,b) => a.level - b.level).map(role => (
                   <th key={role.level} style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid var(--border-color)' }}>
                     {role.name} <br/> 
                     <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Lvl {role.level}</span>
@@ -273,7 +293,7 @@ const Users = () => {
               {permissionList.map(perm => (
                 <tr key={perm.key} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '12px', fontWeight: 500 }}>{perm.label}</td>
-                  {roles.sort((a,b) => a.level - b.level).map(role => (
+                  {localRoles.sort((a,b) => a.level - b.level).map(role => (
                     <td key={`${role.level}-${perm.key}`} style={{ padding: '12px', textAlign: 'center' }}>
                       <input 
                         type="checkbox" 
