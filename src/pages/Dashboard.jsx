@@ -3,9 +3,10 @@ import { AppContext } from '../context/AppContext';
 import { 
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
   LineChart, Line,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend,
+  BarChart, Bar
 } from 'recharts';
-import { BarChart2, Activity, PieChart as PieIcon } from 'lucide-react';
+import { BarChart2, Activity, PieChart as PieIcon, Users as UsersIcon, List } from 'lucide-react';
 
 
 
@@ -29,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const Dashboard = () => {
-  const { currentUser, leads } = useContext(AppContext);
+  const { currentUser, leads, users } = useContext(AppContext);
 
   // Dinamik Line Chart verisi (Günlere göre)
   const groupedByDate = leads.reduce((acc, lead) => {
@@ -79,6 +80,20 @@ const Dashboard = () => {
   ] : [
     { name: 'Veri Yok', value: 1 } // Boş görünüm
   ];
+
+  // Satış Danışmanı Performansı (Bar Chart)
+  const salesConsultants = users.filter(u => u.level === 2);
+  const leadsPerConsultant = salesConsultants.map(sc => {
+    const count = leads.filter(l => l.assigneeId === sc.id).length;
+    return { name: sc.name, count };
+  });
+
+  // Süreç Durumları Dağılımı (Bar Chart)
+  const statusList = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Satış', 'İptal'];
+  const leadsPerStatus = statusList.map(status => {
+    const count = leads.filter(l => (l.status || 'Yeni') === status).length;
+    return { name: status, count };
+  });
 
   return (
     <div>
@@ -167,6 +182,44 @@ const Dashboard = () => {
           </div>
           <div style={{ textAlign: 'center', marginTop: '-30px', fontWeight: 'bold', fontSize: '14px', zIndex: 10, position: 'relative', pointerEvents: 'none' }}>
              
+          </div>
+        </div>
+
+        {/* Consultant Performance Chart */}
+        <div className="card" style={{ padding: '20px' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '15px' }}>
+            <UsersIcon size={18} color="var(--accent-color)" />
+            Temsilci Atanan Lead Dağılımı
+          </h3>
+          <div style={{ height: '250px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={leadsPerConsultant} margin={{ left: -20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{fontSize: 10}} />
+                <YAxis allowDecimals={false} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)'}} />
+                <Bar dataKey="count" fill="var(--accent-color)" radius={[4, 4, 0, 0]} name="Lead Sayısı" barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Status Distribution Chart */}
+        <div className="card" style={{ padding: '20px' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '15px' }}>
+            <List size={18} color="var(--accent-color)" />
+            Süreç Durumları Dağılımı
+          </h3>
+          <div style={{ height: '250px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={leadsPerStatus} margin={{ left: -20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{fontSize: 10, angle: -30, textAnchor: 'end'}} height={60} />
+                <YAxis allowDecimals={false} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
+                <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)'}} />
+                <Bar dataKey="count" fill={PURPLE_COLOR} radius={[4, 4, 0, 0]} name="Sayı" barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
