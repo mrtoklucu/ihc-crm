@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import bgImg from '../assets/login_page_background.webp';
 import logoImg from '../assets/ihc_logo.webp';
+import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
 
 const Login = () => {
   const { login } = useContext(AppContext);
@@ -65,6 +66,11 @@ const Login = () => {
             Giriş Yap
           </button>
         </form>
+
+        <div style={{ marginTop: '32px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: '8px' }}>made by</span>
+          <img src={zbtLogo} alt="ZBT Media Logo" style={{ height: '24px', opacity: 0.7 }} />
+        </div>
       </div>
     </div>
   );

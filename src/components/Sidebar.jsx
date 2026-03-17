@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User, ClipboardList } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import logoImg from '../assets/ihc_logo.webp';
+import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
 
 const Sidebar = () => {
   const { currentUser, checkPermission } = useContext(AppContext);
@@ -68,6 +69,11 @@ const Sidebar = () => {
           </NavLink>
         )}
       </nav>
+
+      <div style={{ marginTop: 'auto', padding: '24px 16px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>made by</span>
+        <img src={zbtLogo} alt="ZBT Media Logo" style={{ height: '20px', opacity: 0.6 }} />
+      </div>
     </aside>
   );
 };
