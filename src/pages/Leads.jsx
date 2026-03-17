@@ -18,6 +18,7 @@ const Leads = () => {
   const [searchStr, setSearchStr] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
+  const [filterConsultant, setFilterConsultant] = useState('');
 
   // Sales consultants
   const salesConsultants = users.filter(u => u.level === 2);
@@ -75,7 +76,10 @@ const Leads = () => {
     const matchSearch = fullStr.includes(searchStr.toLowerCase());
     const matchStatus = filterStatus ? (l.status || 'Yeni') === filterStatus : true;
     const matchSource = filterSource ? l.source === filterSource : true;
-    return matchSearch && matchStatus && matchSource;
+    const matchConsultant = filterConsultant 
+      ? (filterConsultant === 'null' ? l.assigneeId === null : l.assigneeId === parseInt(filterConsultant)) 
+      : true;
+    return matchSearch && matchStatus && matchSource && matchConsultant;
   }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return (
@@ -122,6 +126,21 @@ const Leads = () => {
             <option value="">Tüm Kaynaklar</option>
             {predefinedSources.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
           </select>
+
+          {(checkPermission('manageUsers') || checkPermission('assignLead')) && (
+            <select 
+              value={filterConsultant} 
+              onChange={e => setFilterConsultant(e.target.value)}
+              className="form-input" 
+              style={{ padding: '10px', width: 'auto' }}
+            >
+              <option value="">Tüm Danışmanlar</option>
+              <option value="null">Atanmamış</option>
+              {salesConsultants.map(sc => (
+                <option key={sc.id} value={sc.id}>{sc.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
