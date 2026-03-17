@@ -122,9 +122,18 @@ const Dashboard = () => {
   });
 
   // Süreç Durumları Dağılımı (Bar Chart)
-  const statusList = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Satış', 'İptal'];
+  const statusList = [
+    "Aranmayı Bekliyor", "Aradım, Açmadı", "Aramayı Reddeti", "Başka Bir Klinikle Anlaşmış", 
+    "Lokasyon Olumsuz", "Randevu Oluşturuldu", "İletişim Eksik", "Destek Tedavisine Uygun", 
+    "Dil Sorunu", "Engelledi/Engelledim", "Fiyatı Pahalı Buldu", "Fotoğraf Alındı, Teklif Verildi", 
+    "Fotoğraf Bekleniyor", "İletişim Kurulamıyor", "İleri Tarihte Düşünüyor", "İletişimdeyim", 
+    "İletişime Geçiyorum", "İlgisiz", "Randevu İptal Edildi", "Kaporalı Randevu Oluşturuldu", 
+    "Mesaj Attım, Bekleniyor", "Operasyona Girdi", "Operasyona Uygun Değil", "Saç Ekimi Düşünmüyor", 
+    "Sadece Fiyat Sordu", "Teklif Verildi, Kararsız", "Teklif Verildi, Olumlu", "Teklife Dönüş Yapmadı", 
+    "Telesekretere Bağlanıyor", "Yanlış Başvuru", "Yanlış Numara", "Yüzyüze Görüşme", "Tekrar Gelen Lead"
+  ];
   const leadsPerStatus = statusList.map(status => {
-    const count = filteredLeads.filter(l => (l.status || 'Yeni') === status).length;
+    const count = filteredLeads.filter(l => (l.status || 'Aranmayı Bekliyor') === status).length;
     return { name: status, count };
   });
 
@@ -272,10 +281,10 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={leadsPerStatus} margin={{ left: -20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{fontSize: 10, angle: -30, textAnchor: 'end'}} height={60} />
+                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{fontSize: 9, angle: -45, textAnchor: 'end'}} height={80} interval={0} />
                 <YAxis allowDecimals={false} stroke="var(--text-secondary)" tick={{fontSize: 12}} />
                 <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)'}} />
-                <Bar dataKey="count" fill={PURPLE_COLOR} radius={[4, 4, 0, 0]} name="Sayı" barSize={30} />
+                <Bar dataKey="count" fill={PURPLE_COLOR} radius={[4, 4, 0, 0]} name="Sayı" barSize={15} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -3,7 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { ArrowLeft, User, Phone, Mail, Globe, Clock, History, FileText, CheckCircle } from 'lucide-react';
 
-const statuses = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Satış', 'İptal'];
+const statuses = [
+  "Aranmayı Bekliyor", "Aradım, Açmadı", "Aramayı Reddeti", "Başka Bir Klinikle Anlaşmış", 
+  "Lokasyon Olumsuz", "Randevu Oluşturuldu", "İletişim Eksik", "Destek Tedavisine Uygun", 
+  "Dil Sorunu", "Engelledi/Engelledim", "Fiyatı Pahalı Buldu", "Fotoğraf Alındı, Teklif Verildi", 
+  "Fotoğraf Bekleniyor", "İletişim Kurulamıyor", "İleri Tarihte Düşünüyor", "İletişimdeyim", 
+  "İletişime Geçiyorum", "İlgisiz", "Randevu İptal Edildi", "Kaporalı Randevu Oluşturuldu", 
+  "Mesaj Attım, Bekleniyor", "Operasyona Girdi", "Operasyona Uygun Değil", "Saç Ekimi Düşünmüyor", 
+  "Sadece Fiyat Sordu", "Teklif Verildi, Kararsız", "Teklif Verildi, Olumlu", "Teklife Dönüş Yapmadı", 
+  "Telesekretere Bağlanıyor", "Yanlış Başvuru", "Yanlış Numara", "Yüzyüze Görüşme", "Tekrar Gelen Lead"
+];
 
 const LeadDetail = () => {
   const { id } = useParams();
@@ -56,7 +65,7 @@ const LeadDetail = () => {
     alert('Not eklendi/Durumu güncellendi!');
   };
 
-  const currentStatusIndex = statuses.indexOf(lead.status || 'Yeni');
+  const currentStatusIndex = statuses.indexOf(lead.status || 'Aranmayı Bekliyor');
   const progressPercent = Math.max(10, (currentStatusIndex / (statuses.length - 1)) * 100);
 
   return (
@@ -81,8 +90,8 @@ const LeadDetail = () => {
               <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: lead.status === 'İptal' ? 'var(--error)' : lead.status === 'Satış' ? 'var(--success)' : 'var(--accent-color)', transition: 'all 0.3s' }}></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-              <span>Yeni</span>
-              <span>Satış</span>
+              <span>Yeni Kayıt</span>
+              <span>Süreç Tamamlandı</span>
             </div>
           </div>
 

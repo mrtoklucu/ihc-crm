@@ -4,7 +4,16 @@ import { Share, UserCheck, Download, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
-const predefinedStatuses = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Satış', 'İptal'];
+const predefinedStatuses = [
+  "Aranmayı Bekliyor", "Aradım, Açmadı", "Aramayı Reddeti", "Başka Bir Klinikle Anlaşmış", 
+  "Lokasyon Olumsuz", "Randevu Oluşturuldu", "İletişim Eksik", "Destek Tedavisine Uygun", 
+  "Dil Sorunu", "Engelledi/Engelledim", "Fiyatı Pahalı Buldu", "Fotoğraf Alındı, Teklif Verildi", 
+  "Fotoğraf Bekleniyor", "İletişim Kurulamıyor", "İleri Tarihte Düşünüyor", "İletişimdeyim", 
+  "İletişime Geçiyorum", "İlgisiz", "Randevu İptal Edildi", "Kaporalı Randevu Oluşturuldu", 
+  "Mesaj Attım, Bekleniyor", "Operasyona Girdi", "Operasyona Uygun Değil", "Saç Ekimi Düşünmüyor", 
+  "Sadece Fiyat Sordu", "Teklif Verildi, Kararsız", "Teklif Verildi, Olumlu", "Teklife Dönüş Yapmadı", 
+  "Telesekretere Bağlanıyor", "Yanlış Başvuru", "Yanlış Numara", "Yüzyüze Görüşme", "Tekrar Gelen Lead"
+];
 const predefinedSources = [
   'Acente', 'Google', 'İnstagram DM', 'Mail', 'Meta', 
   'Organik/Kendisi Buldu', 'Referans', 'Web Sitesi', 'Whatsaap', 'Yandex'
@@ -69,7 +78,7 @@ const Leads = () => {
       'Telefon': l.phone,
       'Ülke': l.country,
       'Kaynak': l.source,
-      'Durum': l.status || 'Yeni',
+      'Durum': l.status || 'Aranmayı Bekliyor',
       'Kayıt Tarihi': new Date(l.createdAt).toLocaleDateString('tr-TR'),
       'Atanan': l.assigneeId ? users.find(u => u.id === l.assigneeId)?.name : 'Atanmamış'
     })));
@@ -81,7 +90,7 @@ const Leads = () => {
   const visibleLeads = roleFilteredLeads.filter(l => {
     const fullStr = String(l.nameSurname + ' ' + l.email + ' ' + l.phone).toLowerCase();
     const matchSearch = fullStr.includes(searchStr.toLowerCase());
-    const matchStatus = filterStatus ? (l.status || 'Yeni') === filterStatus : true;
+    const matchStatus = filterStatus ? (l.status || 'Aranmayı Bekliyor') === filterStatus : true;
     const matchSource = filterSource ? l.source === filterSource : true;
     const matchConsultant = filterConsultant 
       ? (filterConsultant === 'null' ? l.assigneeId === null : l.assigneeId === parseInt(filterConsultant)) 
@@ -205,9 +214,11 @@ const Leads = () => {
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{lead.phone}</td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}><span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>{lead.source}</span></td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                      <span className={`badge ${lead.status==='Yeni'?'':lead.status==='Satış'?'badge-success':lead.status==='İptal'?'':'badge-warning'}`}
-                        style={{ background: lead.status === 'İptal' ? 'rgba(239, 68, 68, 0.1)' : undefined, color: lead.status === 'İptal' ? 'var(--error)' : undefined, ...(lead.status==='Takipte'||lead.status==='Görevde/Arandı'||lead.status==='Randevu Alındı' ? {background:'rgba(212, 175, 55, 0.1)', color:'var(--accent-color)'} : {})}}>
-                        {lead.status || 'Yeni'}
+                      <span className="badge" style={{ 
+                        background: (['Randevu Oluşturuldu', 'Kaporalı Randevu Oluşturuldu', 'Operasyona Girdi', 'Teklif Verildi, Olumlu'].includes(lead.status)) ? 'rgba(16, 185, 129, 0.1)' : (['Aramayı Reddeti', 'İptal', 'Engelledi/Engelledim', 'Randevu İptal Edildi'].includes(lead.status)) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
+                        color: (['Randevu Oluşturuldu', 'Kaporalı Randevu Oluşturuldu', 'Operasyona Girdi', 'Teklif Verildi, Olumlu'].includes(lead.status)) ? 'var(--success)' : (['Aramayı Reddeti', 'İptal', 'Engelledi/Engelledim', 'Randevu İptal Edildi'].includes(lead.status)) ? 'var(--error)' : 'var(--accent-color)'
+                      }}>
+                        {lead.status || 'Aranmayı Bekliyor'}
                       </span>
                     </td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{new Date(lead.createdAt).toLocaleDateString('tr-TR')}</td>

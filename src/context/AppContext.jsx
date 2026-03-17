@@ -179,8 +179,8 @@ export const AppProvider = ({ children }) => {
       id: Date.now(), 
       assigneeId: null, 
       createdAt: new Date().toISOString(),
-      status: 'Yeni',
-      history: [{ date: new Date().toISOString(), note: 'Lead sisteme eklendi.', status: 'Yeni', author: currentUser ? currentUser.name : 'Sistem' }]
+      status: 'Aranmayı Bekliyor',
+      history: [{ date: new Date().toISOString(), note: 'Lead sisteme eklendi.', status: 'Aranmayı Bekliyor', author: currentUser ? currentUser.name : 'Sistem' }]
     };
     setLeads([...leads, newLead]);
     addLog('Yeni Lead', `${newLead.nameSurname} isimli lead eklendi.`);
@@ -193,7 +193,7 @@ export const AppProvider = ({ children }) => {
         const newHistory = [...(lead.history || []), {
           date: new Date().toISOString(),
           note: `Lead ${assignee ? assignee.name : 'birine'} atandı.`,
-          status: lead.status || 'Yeni',
+          status: lead.status || 'Aranmayı Bekliyor',
           author: currentUser ? currentUser.name : 'Sistem'
         }];
         return { ...lead, assigneeId: userId, history: newHistory };
