@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User, ClipboardList } from 'lucide-react';
+import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User, ClipboardList, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import logoImg from '../assets/ihc_logo.webp';
 import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
@@ -8,6 +8,7 @@ import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
 const Sidebar = () => {
   const { currentUser, checkPermission } = useContext(AppContext);
   const location = useLocation();
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const isDesktopVisible = (path) => {
     if (path === '/') return checkPermission('viewDashboard');
@@ -47,7 +48,9 @@ const Sidebar = () => {
             <span>Lead Listesi</span>
           </NavLink>
         )}
+      </nav>
 
+      <div style={{ marginTop: 'auto', padding: '16px 0' }}>
         {isDesktopVisible('/profile') && (
           <NavLink to="/profile" className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
             <User size={20} />
@@ -55,22 +58,40 @@ const Sidebar = () => {
           </NavLink>
         )}
 
-        {isDesktopVisible('/users') && (
-          <NavLink to="/users" className={`nav-link ${location.pathname === '/users' ? 'active' : ''}`}>
-            <Shield size={20} />
-            <span>Yetkilendirme</span>
-          </NavLink>
+        {(isDesktopVisible('/users') || isDesktopVisible('/logs')) && (
+          <>
+            <div 
+              className={`nav-link`} 
+              style={{ cursor: 'pointer', justifyContent: 'space-between' }} 
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Settings size={20} />
+                <span>Ayarlar</span>
+              </div>
+              {isSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </div>
+            {isSettingsOpen && (
+              <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                {isDesktopVisible('/users') && (
+                  <NavLink to="/users" className={`nav-link ${location.pathname === '/users' ? 'active' : ''}`} style={{ fontSize: '13px', padding: '10px 24px' }}>
+                    <Shield size={16} />
+                    <span>Yetkilendirme</span>
+                  </NavLink>
+                )}
+                {isDesktopVisible('/logs') && (
+                  <NavLink to="/logs" className={`nav-link ${location.pathname === '/logs' ? 'active' : ''}`} style={{ fontSize: '13px', padding: '10px 24px' }}>
+                    <ClipboardList size={16} />
+                    <span>Log Geçmişi</span>
+                  </NavLink>
+                )}
+              </div>
+            )}
+          </>
         )}
+      </div>
 
-        {isDesktopVisible('/logs') && (
-          <NavLink to="/logs" className={`nav-link ${location.pathname === '/logs' ? 'active' : ''}`}>
-            <ClipboardList size={20} />
-            <span>Log Geçmişi</span>
-          </NavLink>
-        )}
-      </nav>
-
-      <div style={{ marginTop: 'auto', padding: '24px 16px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+      <div style={{ padding: '24px 16px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
         <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>made by</span>
         <img src={zbtLogo} alt="ZBT Media Logo" style={{ height: '20px', opacity: 0.6 }} />
       </div>
