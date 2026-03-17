@@ -4,16 +4,25 @@ import { PlusCircle, Globe } from 'lucide-react';
 
 // Common country codes mapping
 const countryCodesMap = {
-  '+90': 'Türkiye',
-  '+1': 'ABD/Kanada',
-  '+44': 'İngiltere',
-  '+49': 'Almanya',
-  '+33': 'Fransa',
-  '+39': 'İtalya',
-  '+34': 'İspanya',
-  '+7': 'Rusya',
-  '+971': 'Bae',
-  '+31': 'Hollanda',
+  '+90': { name: 'Türkiye', code: 'tr' },
+  '+1': { name: 'ABD/Kanada', code: 'us' },
+  '+44': { name: 'İngiltere', code: 'gb' },
+  '+49': { name: 'Almanya', code: 'de' },
+  '+33': { name: 'Fransa', code: 'fr' },
+  '+39': { name: 'İtalya', code: 'it' },
+  '+34': { name: 'İspanya', code: 'es' },
+  '+7': { name: 'Rusya', code: 'ru' },
+  '+971': { name: 'Bae', code: 'ae' },
+  '+31': { name: 'Hollanda', code: 'nl' },
+  '+966': { name: 'Suudi Arabistan', code: 'sa' },
+  '+965': { name: 'Kuveyt', code: 'kw' },
+  '+974': { name: 'Katar', code: 'qa' },
+  '+32': { name: 'Belçika', code: 'be' },
+  '+43': { name: 'Avusturya', code: 'at' },
+  '+41': { name: 'İsviçre', code: 'ch' },
+  '+46': { name: 'İsveç', code: 'se' },
+  '+47': { name: 'Norveç', code: 'no' },
+  '+45': { name: 'Danimarka', code: 'dk' },
 };
 
 const predefinedSources = [
@@ -38,6 +47,7 @@ const NewLead = () => {
     email: '',
     phone: '',
     country: '',
+    countryCode: '',
     source: '',
     note: ''
   });
@@ -62,11 +72,19 @@ const NewLead = () => {
     // Auto country logic
     if (name === 'phone' && value) {
       // Very basic detection of country code
-      for (const code of Object.keys(countryCodesMap)) {
+      let matched = false;
+      // Sort keys by length descending to match longest code first
+      const keys = Object.keys(countryCodesMap).sort((a,b) => b.length - a.length);
+      for (const code of keys) {
         if (value.startsWith(code)) {
-          newFormData.country = countryCodesMap[code];
+          newFormData.country = countryCodesMap[code].name;
+          newFormData.countryCode = countryCodesMap[code].code;
+          matched = true;
           break;
         }
+      }
+      if (!matched) {
+        newFormData.countryCode = '';
       }
     }
 
@@ -78,7 +96,7 @@ const NewLead = () => {
     addLead(formData);
     setSuccess(true);
     setFormData({
-      nameSurname: '', email: '', phone: '', country: '', source: '', note: ''
+      nameSurname: '', email: '', phone: '', country: '', countryCode: '', source: '', note: ''
     });
     
     setTimeout(() => {
@@ -112,16 +130,26 @@ const NewLead = () => {
 
           <div className="form-group">
             <label className="form-label">Telefon Numarası *</label>
-            <input 
-              required
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="form-input" 
-              placeholder="+90 5xx xxx xx xx" 
-            />
+            <div style={{ position: 'relative' }}>
+              <input 
+                required
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="form-input" 
+                placeholder="+90 5xx xxx xx xx" 
+                style={{ paddingRight: '40px' }}
+              />
+              {formData.countryCode && (
+                <img 
+                  src={`https://flagcdn.com/w40/${formData.countryCode}.png`} 
+                  alt="flag" 
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '20px', borderRadius: '2px' }}
+                />
+              )}
+            </div>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Globe size={12}/> Alan kodu ile girildiğinde ülke otomatik dolar.
+              <Globe size={12}/> Alan kodu ile girildiğinde ülke ve bayrak otomatik dolar.
             </span>
           </div>
 

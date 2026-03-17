@@ -100,7 +100,21 @@ const LeadDetail = () => {
                 <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}><Mail size={12} style={{ display: 'inline', marginRight: 4 }} />E-posta</span><div>{lead.email || '-'}</div></div>
               </div>
 
-              <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}><Globe size={12} style={{ display: 'inline', marginRight: 4 }} />Ülke / Kaynak</span><div>{lead.country || 'Belirtilmedi'} • <span className="badge">{lead.source}</span></div></div>
+              <div>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}>
+                  <Globe size={12} style={{ display: 'inline', marginRight: 4 }} />Ülke / Kaynak
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {lead.countryCode && (
+                    <img 
+                      src={`https://flagcdn.com/w40/${lead.countryCode}.png`} 
+                      alt="flag" 
+                      style={{ width: '18px', borderRadius: '2px' }}
+                    />
+                  )}
+                  {lead.country || 'Belirtilmedi'} • <span className="badge">{lead.source}</span>
+                </div>
+              </div>
               
               <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}><Clock size={12} style={{ display: 'inline', marginRight: 4 }} />Kayıt Tarihi</span><div>{new Date(lead.createdAt).toLocaleString('tr-TR')}</div></div>
 

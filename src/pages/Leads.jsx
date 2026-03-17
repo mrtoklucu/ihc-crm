@@ -154,7 +154,18 @@ const Leads = () => {
                       <div style={{ fontWeight: 600, color: 'var(--accent-color)' }}>{lead.nameSurname}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{lead.email}</div>
                     </td>
-                    <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{lead.country || '-'}</td>
+                    <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {lead.countryCode && (
+                          <img 
+                            src={`https://flagcdn.com/w40/${lead.countryCode}.png`} 
+                            alt="flag" 
+                            style={{ width: '18px', borderRadius: '2px' }}
+                          />
+                        )}
+                        {lead.country || '-'}
+                      </div>
+                    </td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{lead.phone}</td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}><span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>{lead.source}</span></td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
