@@ -3,7 +3,10 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('crm_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   
   const initialRoles = [
     { 
@@ -137,6 +140,14 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('crm_logs', JSON.stringify(logs));
   }, [logs]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('crm_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('crm_current_user');
+    }
+  }, [currentUser]);
 
   const login = (email, password) => {
     const user = users.find(u => u.email === email && u.password === password);
