@@ -6,11 +6,81 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   
   const initialRoles = [
-    { level: 1, name: 'Misafir' },
-    { level: 2, name: 'Satış Danışmanı' },
-    { level: 3, name: 'Uzman' },
-    { level: 4, name: 'Genel Koordinatör' },
-    { level: 5, name: 'Admin' },
+    { 
+      level: 1, 
+      name: 'Misafir',
+      permissions: {
+        viewDashboard: true,
+        viewLeads: false,
+        addLead: false,
+        editLead: false,
+        assignLead: false,
+        exportExcel: false,
+        manageUsers: false,
+        viewLogs: false,
+        editProfile: false
+      }
+    },
+    { 
+      level: 2, 
+      name: 'Satış Danışmanı',
+      permissions: {
+        viewDashboard: true,
+        viewLeads: true,
+        addLead: false,
+        editLead: true,
+        assignLead: false,
+        exportExcel: false,
+        manageUsers: false,
+        viewLogs: false,
+        editProfile: true
+      }
+    },
+    { 
+      level: 3, 
+      name: 'Uzman',
+      permissions: {
+        viewDashboard: true,
+        viewLeads: true,
+        addLead: false,
+        editLead: true,
+        assignLead: false,
+        exportExcel: false,
+        manageUsers: false,
+        viewLogs: false,
+        editProfile: true
+      }
+    },
+    { 
+      level: 4, 
+      name: 'Genel Koordinatör',
+      permissions: {
+        viewDashboard: true,
+        viewLeads: true,
+        addLead: true,
+        editLead: true,
+        assignLead: true,
+        exportExcel: true,
+        manageUsers: false,
+        viewLogs: false,
+        editProfile: true
+      }
+    },
+    { 
+      level: 5, 
+      name: 'Admin',
+      permissions: {
+        viewDashboard: true,
+        viewLeads: true,
+        addLead: true,
+        editLead: true,
+        assignLead: true,
+        exportExcel: true,
+        manageUsers: true,
+        viewLogs: true,
+        editProfile: true
+      }
+    },
   ];
 
   const [roles, setRoles] = useState(() => {
@@ -180,10 +250,21 @@ export const AppProvider = ({ children }) => {
     addLog('Kullanıcı Silme', `${userToDelete?.name} sistemi üzerinden silindi.`);
   };
 
+  const updateRolePermissions = (roleLevel, permissions) => {
+    setRoles(roles.map(r => r.level === roleLevel ? { ...r, permissions } : r));
+    addLog('Yetki Güncelleme', `${roles.find(r => r.level === roleLevel)?.name} yetkileri güncellendi.`);
+  };
+
+  const checkPermission = (permKey) => {
+    if (!currentUser) return false;
+    const role = roles.find(r => r.level === currentUser.level);
+    return role?.permissions?.[permKey] || false;
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, users, leads, roles, logs,
-      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser, addLog
+      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser, addLog, updateRolePermissions, checkPermission
     }}>
       {children}
     </AppContext.Provider>

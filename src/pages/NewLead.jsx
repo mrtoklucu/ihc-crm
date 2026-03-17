@@ -30,7 +30,7 @@ const predefinedSources = [
 ];
 
 const NewLead = () => {
-  const { currentUser, addLead } = useContext(AppContext);
+  const { currentUser, addLead, checkPermission } = useContext(AppContext);
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -42,14 +42,14 @@ const NewLead = () => {
     note: ''
   });
 
-  // Level 4 (Genel Koordinatör) & Level 5 (Admin) can add leads
-  if (currentUser.level < 4) {
+  // Check permission
+  if (!checkPermission('addLead')) {
     return (
       <div>
         <h1 className="page-title">Yetki Hatası</h1>
         <div className="card">
           <p>Hoş geldiniz, {currentUser.name}.</p>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Yeni bir lead girmek için Genel Koordinatör veya Admin yetkisine sahip olmalısınız.</p>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Yeni bir lead girmek için gerekli yetkiye sahip olmalısınız.</p>
         </div>
       </div>
     );

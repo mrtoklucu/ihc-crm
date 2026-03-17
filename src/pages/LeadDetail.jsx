@@ -8,7 +8,7 @@ const statuses = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Sa
 const LeadDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { leads, users, currentUser, addLeadHistory } = useContext(AppContext);
+  const { leads, users, currentUser, addLeadHistory, checkPermission } = useContext(AppContext);
   const [newNote, setNewNote] = useState('');
   const [newStatus, setNewStatus] = useState('');
 
@@ -30,17 +30,20 @@ const LeadDetail = () => {
     );
   }
 
+  // Authorization check
   const isAssignedToMe = lead.assigneeId === currentUser.id;
-  const isAuthorized = currentUser.level >= 4 || isAssignedToMe;
-
+  const isAuthorized = checkPermission('manageUsers') || checkPermission('assignLead') || (checkPermission('viewLeads') && isAssignedToMe);
+  
   if (!isAuthorized) {
     return (
       <div>
         <h1 className="page-title">Yetki Hatası</h1>
-        <div className="card"><p>Bu sayfayı görüntülemeye yetkiniz bulunmamaktadır.</p></div>
+        <div className="card"><p>Bu lead detayını görüntülemeye yetkiniz bulunmamaktadır.</p></div>
       </div>
     );
   }
+
+  const canEdit = checkPermission('editLead');
 
   const assigneeUser = lead.assigneeId ? users.find(u => u.id === lead.assigneeId) : null;
 
@@ -136,31 +139,33 @@ const LeadDetail = () => {
             )}
           </div>
 
-          <form onSubmit={handleAddNote} style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
-            <div className="form-group">
-              <label className="form-label">Süreç Durumu</label>
-              <select 
-                className="form-input" 
-                value={newStatus} 
-                onChange={e => setNewStatus(e.target.value)}
-              >
-                {statuses.map((s, i) => <option key={i} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="form-group" style={{ marginBottom: '12px' }}>
-              <label className="form-label">Yeni Not Ekle</label>
-              <textarea 
-                className="form-input" 
-                rows="3" 
-                placeholder="Müşteri ile bugün görüşüldü, eşine soracak..."
-                value={newNote}
-                onChange={e => setNewNote(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              <FileText size={16} /> Durumu & Notu Kaydet
-            </button>
-          </form>
+          {canEdit && (
+            <form onSubmit={handleAddNote} style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+              <div className="form-group">
+                <label className="form-label">Süreç Durumu</label>
+                <select 
+                  className="form-input" 
+                  value={newStatus} 
+                  onChange={e => setNewStatus(e.target.value)}
+                >
+                  {statuses.map((s, i) => <option key={i} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Yeni Not Ekle</label>
+                <textarea 
+                  className="form-input" 
+                  rows="3" 
+                  placeholder="Müşteri ile bugün görüşüldü, eşine soracak..."
+                  value={newNote}
+                  onChange={e => setNewNote(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                <FileText size={16} /> Durumu & Notu Kaydet
+              </button>
+            </form>
+          )}
 
         </div>
       </div>

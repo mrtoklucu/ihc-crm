@@ -11,7 +11,7 @@ const predefinedSources = [
 ];
 
 const Leads = () => {
-  const { currentUser, leads, users, assignLead } = useContext(AppContext);
+  const { currentUser, leads, users, assignLead, checkPermission } = useContext(AppContext);
   const [selectedAssignee, setSelectedAssignee] = useState({});
   const navigate = useNavigate();
 
@@ -24,20 +24,23 @@ const Leads = () => {
 
   // Filter leads based on role
   let roleFilteredLeads = [];
-  if (currentUser.level >= 4) {
+  if (checkPermission('manageUsers') || checkPermission('assignLead')) {
     roleFilteredLeads = leads;
-  } else if (currentUser.level === 2) {
+  } else if (currentUser.level === 2 || currentUser.level === 3) {
     roleFilteredLeads = leads.filter(l => l.assigneeId === currentUser.id);
   } else {
-    // Levels 1 and 3 don't see anything explicitly per prompt, or we can just say "yetkiniz yok"
-    return (
-      <div>
-        <h1 className="page-title">Lead Listesi</h1>
-        <div className="card">
-          <p>Bu sayfayı görüntülemek için yeterli yetkiniz bulunmamaktadır.</p>
+    // Other levels without explicit access
+    if (!checkPermission('viewLeads')) {
+      return (
+        <div>
+          <h1 className="page-title">Lead Listesi</h1>
+          <div className="card">
+            <p>Bu sayfayı görüntülemek için yeterli yetkiniz bulunmamaktadır.</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    roleFilteredLeads = leads;
   }
 
   const handleAssign = (leadId) => {
@@ -79,7 +82,7 @@ const Leads = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 className="page-title" style={{ margin: 0 }}>Lead Listesi</h1>
-        {currentUser.level >= 4 && (
+        {checkPermission('exportExcel') && (
           <button onClick={handleExport} className="btn btn-secondary btn-sm" style={{ borderColor: '#10b981', color: '#10b981' }}>
             <Download size={16} /> Excel İndir
           </button>
@@ -162,7 +165,7 @@ const Leads = () => {
                     </td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{new Date(lead.createdAt).toLocaleDateString('tr-TR')}</td>
                     <td>
-                      {currentUser.level >= 4 ? (
+                      {checkPermission('assignLead') ? (
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {!isAssigned ? (
                             <>
@@ -192,8 +195,8 @@ const Leads = () => {
                           )}
                         </div>
                       ) : (
-                        // Lvl 2 view
-                        <span className="badge badge-success">Sizin Müşteriniz</span>
+                        // No assign permission
+                        <span className="badge badge-success">{isAssigned ? `Atandı: ${assigneeUser?.name}` : 'Atanmamış'}</span>
                       )}
                     </td>
                   </tr>

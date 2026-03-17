@@ -5,16 +5,16 @@ import { AppContext } from '../context/AppContext';
 import logoImg from '../assets/ihc_logo.webp';
 
 const Sidebar = () => {
-  const { currentUser } = useContext(AppContext);
+  const { currentUser, checkPermission } = useContext(AppContext);
   const location = useLocation();
 
   const isDesktopVisible = (path) => {
-    if (path === '/') return true; // Everyone can see Analiz
-    if (path === '/new-lead' && currentUser.level >= 4) return true;
-    if (path === '/leads' && currentUser.level >= 2) return true;
-    if (path === '/profile' && currentUser.level >= 2) return true;
-    if (path === '/users' && currentUser.level === 5) return true;
-    if (path === '/logs' && currentUser.level === 5) return true;
+    if (path === '/') return checkPermission('viewDashboard');
+    if (path === '/new-lead') return checkPermission('addLead');
+    if (path === '/leads') return checkPermission('viewLeads');
+    if (path === '/profile') return checkPermission('editProfile');
+    if (path === '/users') return checkPermission('manageUsers');
+    if (path === '/logs') return checkPermission('viewLogs');
     return false;
   };
 

@@ -3,10 +3,22 @@ import { AppContext } from '../context/AppContext';
 import { ShieldAlert, UserPlus, Settings } from 'lucide-react';
 
 const Users = () => {
-  const { currentUser, users, roles, addRole, addUser, updateUser, deleteUser } = useContext(AppContext);
+  const { currentUser, users, roles, addRole, addUser, updateUser, deleteUser, updateRolePermissions } = useContext(AppContext);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [editingUserId, setEditingUserId] = useState(null);
+
+  const permissionList = [
+    { key: 'viewDashboard', label: 'Analiz Paneli Görüntüleme' },
+    { key: 'viewLeads', label: 'Lead Listesi Görüntüleme' },
+    { key: 'addLead', label: 'Yeni Lead Ekleme' },
+    { key: 'editLead', label: 'Lead Detay/Not Düzenleme' },
+    { key: 'assignLead', label: 'Lead Atama Yapabilme' },
+    { key: 'exportExcel', label: 'Excel Dışa Aktarma' },
+    { key: 'manageUsers', label: 'Yetki/Kullanıcı Yönetimi' },
+    { key: 'viewLogs', label: 'Log Geçmişi Görüntüleme' },
+    { key: 'editProfile', label: 'Profil Düzenleyebilme' }
+  ];
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -66,6 +78,12 @@ const Users = () => {
     if (window.confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
       deleteUser(userId);
     }
+  };
+
+  const handlePermissionChange = (roleLevel, permKey, value) => {
+    const role = roles.find(r => r.level === roleLevel);
+    const newPermissions = { ...role.permissions, [permKey]: value };
+    updateRolePermissions(roleLevel, newPermissions);
   };
 
   return (
@@ -229,6 +247,47 @@ const Users = () => {
             </table>
           </div>
 
+        </div>
+      </div>
+
+      {/* Permission Matrix */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+          <Settings size={20} className="text-secondary" />
+          Detaylı Yetki Matrisi
+        </h2>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="permission-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>Yetki / Özellik</th>
+                {roles.sort((a,b) => a.level - b.level).map(role => (
+                  <th key={role.level} style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid var(--border-color)' }}>
+                    {role.name} <br/> 
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Lvl {role.level}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {permissionList.map(perm => (
+                <tr key={perm.key} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '12px', fontWeight: 500 }}>{perm.label}</td>
+                  {roles.sort((a,b) => a.level - b.level).map(role => (
+                    <td key={`${role.level}-${perm.key}`} style={{ padding: '12px', textAlign: 'center' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={role.permissions?.[perm.key] || false}
+                        onChange={(e) => handlePermissionChange(role.level, perm.key, e.target.checked)}
+                        disabled={role.level === 5} // Admin permissions always true & locked
+                        style={{ cursor: role.level === 5 ? 'not-allowed' : 'pointer', width: '18px', height: '18px' }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
