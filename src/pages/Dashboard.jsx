@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import { 
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
@@ -31,9 +31,42 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Dashboard = () => {
   const { currentUser, leads, users } = useContext(AppContext);
+  
+  // Date Range State
+  const [dateRange, setDateRange] = useState({
+    start: '', // YYYY-MM-DD
+    end: new Date().toISOString().split('T')[0],
+    label: 'Tümü'
+  });
+
+  // Predefined Range Handler
+  const setRange = (days, label) => {
+    const end = new Date();
+    const start = new Date();
+    if (days === 'all') {
+      setDateRange({ start: '', end: end.toISOString().split('T')[0], label });
+    } else {
+      start.setDate(end.getDate() - days);
+      setDateRange({ 
+        start: start.toISOString().split('T')[0], 
+        end: end.toISOString().split('T')[0], 
+        label 
+      });
+    }
+  };
+
+  // Filtered Leads based on Date Range
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      const leadDate = new Date(lead.createdAt).toISOString().split('T')[0];
+      const startMatch = !dateRange.start || leadDate >= dateRange.start;
+      const endMatch = !dateRange.end || leadDate <= dateRange.end;
+      return startMatch && endMatch;
+    });
+  }, [leads, dateRange]);
 
   // Dinamik Line Chart verisi (Günlere göre)
-  const groupedByDate = leads.reduce((acc, lead) => {
+  const groupedByDate = filteredLeads.reduce((acc, lead) => {
     const d = new Date(lead.createdAt);
     const dateKey = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}.${d.getFullYear()}`;
     acc[dateKey] = (acc[dateKey] || 0) + 1;
@@ -56,7 +89,7 @@ const Dashboard = () => {
   }
 
   // Dinamik Scatter Chart verisi
-  const groupedByShortDate = leads.reduce((acc, lead) => {
+  const groupedByShortDate = filteredLeads.reduce((acc, lead) => {
     const d = new Date(lead.createdAt);
     const dateKey = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
     acc[dateKey] = (acc[dateKey] || 0) + 1;
@@ -71,10 +104,10 @@ const Dashboard = () => {
   }));
 
   // Dinamik Pie Chart verisi
-  const assignedCount = leads.filter(l => l.assigneeId).length;
-  const unassignedCount = leads.length - assignedCount;
+  const assignedCount = filteredLeads.filter(l => l.assigneeId).length;
+  const unassignedCount = filteredLeads.length - assignedCount;
   
-  const computedPieData = leads.length > 0 ? [
+  const computedPieData = filteredLeads.length > 0 ? [
     { name: 'Potansiyel (Atanmamış)', value: unassignedCount },
     { name: 'Aktif (Atanmış)', value: assignedCount }
   ] : [
@@ -84,14 +117,14 @@ const Dashboard = () => {
   // Satış Danışmanı Performansı (Bar Chart)
   const salesConsultants = users.filter(u => u.level === 2);
   const leadsPerConsultant = salesConsultants.map(sc => {
-    const count = leads.filter(l => l.assigneeId === sc.id).length;
+    const count = filteredLeads.filter(l => l.assigneeId === sc.id).length;
     return { name: sc.name, count };
   });
 
   // Süreç Durumları Dağılımı (Bar Chart)
   const statusList = ['Yeni', 'Görevde/Arandı', 'Takipte', 'Randevu Alındı', 'Satış', 'İptal'];
   const leadsPerStatus = statusList.map(status => {
-    const count = leads.filter(l => (l.status || 'Yeni') === status).length;
+    const count = filteredLeads.filter(l => (l.status || 'Yeni') === status).length;
     return { name: status, count };
   });
 
@@ -99,7 +132,32 @@ const Dashboard = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 className="page-title" style={{ margin: 0 }}>Analiz Paneli</h1>
-        <div style={{ color: 'var(--text-secondary)' }}>Hoş geldiniz, {currentUser.name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+           <div className="filter-group" style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '8px' }}>
+              <button onClick={() => setRange(7, '1 Hafta')} className={`btn btn-sm ${dateRange.label === '1 Hafta' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Hafta</button>
+              <button onClick={() => setRange(30, '1 Ay')} className={`btn btn-sm ${dateRange.label === '1 Ay' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Ay</button>
+              <button onClick={() => setRange(365, '1 Yıl')} className={`btn btn-sm ${dateRange.label === '1 Yıl' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Yıl</button>
+              <button onClick={() => setRange('all', 'Tümü')} className={`btn btn-sm ${dateRange.label === 'Tümü' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>Tümü</button>
+           </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input 
+                type="date" 
+                className="form-input" 
+                style={{ width: '130px', padding: '4px 8px', fontSize: '12px' }} 
+                value={dateRange.start}
+                onChange={(e) => setDateRange({...dateRange, start: e.target.value, label: 'Özel'})}
+              />
+              <span style={{color: 'var(--text-secondary)'}}>-</span>
+              <input 
+                type="date" 
+                className="form-input" 
+                style={{ width: '130px', padding: '4px 8px', fontSize: '12px' }} 
+                value={dateRange.end}
+                onChange={(e) => setDateRange({...dateRange, end: e.target.value, label: 'Özel'})}
+              />
+           </div>
+           <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Hoş geldiniz, {currentUser.name}</div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
