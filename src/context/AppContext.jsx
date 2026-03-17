@@ -119,10 +119,24 @@ export const AppProvider = ({ children }) => {
     setUsers([...users, newUser]);
   };
 
+  const updateUser = (userId, updatedData) => {
+    setUsers(users.map(u => {
+      if (u.id === userId) {
+        const updatedUser = { ...u, ...updatedData };
+        // If current user is updated, update the session
+        if (currentUser && currentUser.id === userId) {
+          setCurrentUser(updatedUser);
+        }
+        return updatedUser;
+      }
+      return u;
+    }));
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, users, leads, roles,
-      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory
+      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser
     }}>
       {children}
     </AppContext.Provider>

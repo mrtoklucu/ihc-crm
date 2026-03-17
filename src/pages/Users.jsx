@@ -3,9 +3,10 @@ import { AppContext } from '../context/AppContext';
 import { ShieldAlert, UserPlus, Settings } from 'lucide-react';
 
 const Users = () => {
-  const { currentUser, users, roles, addRole, addUser } = useContext(AppContext);
+  const { currentUser, users, roles, addRole, addUser, updateUser } = useContext(AppContext);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
+  const [editingUserId, setEditingUserId] = useState(null);
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -34,11 +35,31 @@ const Users = () => {
 
   const handleAddUser = (e) => {
     e.preventDefault();
-    if (newUser.name && newUser.email && newUser.password && newUser.role) {
-      addUser(newUser);
-      alert('Kullanıcı Başarıyla Eklendi!');
-      setNewUser({ name: '', email: '', password: '', role: '' });
+    if (editingUserId) {
+      const roleDef = roles.find(r => r.name === newUser.role);
+      updateUser(editingUserId, { 
+        ...newUser, 
+        level: roleDef ? roleDef.level : 1 
+      });
+      alert('Kullanıcı Başarıyla Güncellendi!');
+      setEditingUserId(null);
+    } else {
+      if (newUser.name && newUser.email && newUser.password && newUser.role) {
+        addUser(newUser);
+        alert('Kullanıcı Başarıyla Eklendi!');
+      }
     }
+    setNewUser({ name: '', email: '', password: '', role: '' });
+  };
+
+  const handleEditClick = (u) => {
+    setEditingUserId(u.id);
+    setNewUser({
+      name: u.name,
+      email: u.email,
+      password: u.password,     
+      role: u.role
+    });
   };
 
   return (
@@ -105,7 +126,7 @@ const Users = () => {
         <div className="card">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <UserPlus size={20} className="text-secondary" />
-            Yeni Kullanıcı Oluştur
+            {editingUserId ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı Oluştur'}
           </h2>
           
           <form onSubmit={handleAddUser}>
@@ -155,10 +176,15 @@ const Users = () => {
                 ))}
               </select>
             </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
-              <UserPlus size={16} />
-              Kullanıcı Kaydet
-            </button>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                <UserPlus size={16} />
+                {editingUserId ? 'Kullanıcıyı Güncelle' : 'Kullanıcı Kaydet'}
+              </button>
+              {editingUserId && (
+                <button type="button" className="btn btn-secondary" onClick={() => {setEditingUserId(null); setNewUser({name:'',email:'',password:'',role:''})}}>İptal</button>
+              )}
+            </div>
           </form>
 
           <h3 style={{ marginTop: '32px', marginBottom: '16px', fontSize: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
@@ -170,6 +196,7 @@ const Users = () => {
                 <tr>
                   <th>Kullanıcı</th>
                   <th>Rol / Seviye</th>
+                  <th>İşlem</th>
                 </tr>
               </thead>
               <tbody>
@@ -181,6 +208,11 @@ const Users = () => {
                     </td>
                     <td>
                       <span className="badge">{u.role} - Lvl {u.level}</span>
+                    </td>
+                    <td>
+                      <button onClick={() => handleEditClick(u)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px' }}>
+                        Düzenle
+                      </button>
                     </td>
                   </tr>
                 ))}

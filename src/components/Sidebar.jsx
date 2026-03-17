@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard } from 'lucide-react';
+import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import logoImg from '../assets/ihc_logo.webp';
 
@@ -12,6 +12,7 @@ const Sidebar = () => {
     if (path === '/') return true; // Everyone can see Analiz
     if (path === '/new-lead' && currentUser.level >= 4) return true;
     if (path === '/leads' && currentUser.level >= 2) return true;
+    if (path === '/profile' && currentUser.level >= 2) return true;
     if (path === '/users' && currentUser.level === 5) return true;
     return false;
   };
@@ -42,6 +43,13 @@ const Sidebar = () => {
           <NavLink to="/leads" className={`nav-link ${location.pathname === '/leads' ? 'active' : ''}`}>
             <ListOrdered size={20} />
             <span>Lead Listesi</span>
+          </NavLink>
+        )}
+
+        {isDesktopVisible('/profile') && (
+          <NavLink to="/profile" className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}>
+            <User size={20} />
+            <span>Profilim</span>
           </NavLink>
         )}
 

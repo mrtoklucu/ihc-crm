@@ -7,6 +7,7 @@ import NewLead from './pages/NewLead';
 import Leads from './pages/Leads';
 import LeadDetail from './pages/LeadDetail';
 import Users from './pages/Users';
+import Profile from './pages/Profile';
 import Layout from './components/Layout';
 
 const App = () => {
@@ -23,6 +24,7 @@ const App = () => {
             <Route path="/new-lead" element={<NewLead />} />
             <Route path="/leads" element={<Leads />} />
             <Route path="/leads/:id" element={<LeadDetail />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/users" element={currentUser.level === 5 ? <Users /> : <Navigate to="/" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Route>
