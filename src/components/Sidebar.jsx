@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
+import logoImg from '../assets/IHC-GROUP-IHC-LOGOLAR-2.webp';
 
 const Sidebar = () => {
   const { currentUser } = useContext(AppContext);
@@ -17,9 +18,9 @@ const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
-        <h2 className="sidebar-title">ISTANBUL HAIR CENTER</h2>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>CRM System</div>
+      <div className="sidebar-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px' }}>
+        <img src={logoImg} alt="IHC Logo" style={{ width: '100%', maxWidth: '160px', objectFit: 'contain' }} />
+        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>CRM System</div>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -1,5 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
+import bgImg from '../assets/login_page_background.webp';
+import logoImg from '../assets/IHC-GROUP-IHC-LOGOLAR-2.webp';
 
 const Login = () => {
   const { login } = useContext(AppContext);
@@ -16,11 +18,17 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="card" style={{ width: '400px' }}>
+    <div className="auth-container" style={{ 
+      backgroundImage: `url(${bgImg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      position: 'relative'
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 0 }}></div>
+      <div className="card" style={{ width: '400px', zIndex: 1, backgroundColor: 'rgba(30, 30, 30, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ color: 'var(--accent-color)', fontSize: '24px', letterSpacing: '1px' }}>ISTANBUL HAIR CENTER</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>CRM Giriş Paneli</p>
+          <img src={logoImg} alt="Istanbul Hair Center Logo" style={{ height: '70px', objectFit: 'contain', marginBottom: '16px' }} />
+          <p style={{ color: 'var(--text-secondary)' }}>CRM Giriş Paneli</p>
         </div>
 
         {error && (
