@@ -107,6 +107,13 @@ const LeadDetail = () => {
               <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
                 <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}><Phone size={12} style={{ display: 'inline', marginRight: 4 }} />Telefon</span><div>{lead.phone}</div></div>
                 <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}><Mail size={12} style={{ display: 'inline', marginRight: 4 }} />E-posta</span><div>{lead.email || '-'}</div></div>
+                <div>
+                  <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '12px', marginBottom: '4px' }}>Cinsiyet / Yaş</span>
+                  <div>
+                    {lead.gender || 'Belirtilmedi'} 
+                    {lead.birthDate && ` • ${new Date().getFullYear() - new Date(lead.birthDate).getFullYear()} Yaş (${new Date(lead.birthDate).toLocaleDateString('tr-TR')})`}
+                  </div>
+                </div>
               </div>
 
               <div>

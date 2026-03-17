@@ -48,6 +48,8 @@ const NewLead = () => {
     phone: '',
     country: '',
     countryCode: '',
+    gender: '',
+    birthDate: '',
     source: '',
     note: ''
   });
@@ -96,7 +98,7 @@ const NewLead = () => {
     addLead(formData);
     setSuccess(true);
     setFormData({
-      nameSurname: '', email: '', phone: '', country: '', countryCode: '', source: '', note: ''
+      nameSurname: '', email: '', phone: '', country: '', countryCode: '', gender: '', birthDate: '', source: '', note: ''
     });
     
     setTimeout(() => {
@@ -191,6 +193,33 @@ const NewLead = () => {
                 <option key={idx} value={src}>{src}</option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Cinsiyet</label>
+            <select 
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="form-input"
+              style={{ padding: '12px' }}
+            >
+              <option value="">Seçiniz</option>
+              <option value="Erkek">Erkek</option>
+              <option value="Kadın">Kadın</option>
+              <option value="Belirtilmemiş">Belirtilmemiş</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Doğum Tarihi</label>
+            <input 
+              type="date"
+              name="birthDate"
+              value={formData.birthDate}
+              onChange={handleChange}
+              className="form-input" 
+            />
           </div>
 
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>

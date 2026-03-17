@@ -79,6 +79,9 @@ const Leads = () => {
       'Ülke': l.country,
       'Kaynak': l.source,
       'Durum': l.status || 'Aranmayı Bekliyor',
+      'Cinsiyet': l.gender || '-',
+      'Doğum Tarihi': l.birthDate || '-',
+      'Yaş': l.birthDate ? (new Date().getFullYear() - new Date(l.birthDate).getFullYear()) : '-',
       'Kayıt Tarihi': new Date(l.createdAt).toLocaleDateString('tr-TR'),
       'Atanan': l.assigneeId ? users.find(u => u.id === l.assigneeId)?.name : 'Atanmamış'
     })));
