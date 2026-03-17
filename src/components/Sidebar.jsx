@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import logoImg from '../assets/IHC-GROUP-IHC-LOGOLAR-2.webp';
+import logoImg from '../assets/ihc_logo.webp';
 
 const Sidebar = () => {
   const { currentUser } = useContext(AppContext);

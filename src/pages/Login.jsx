@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import bgImg from '../assets/login_page_background.webp';
-import logoImg from '../assets/IHC-GROUP-IHC-LOGOLAR-2.webp';
+import logoImg from '../assets/ihc_logo.webp';
 
 const Login = () => {
   const { login } = useContext(AppContext);
