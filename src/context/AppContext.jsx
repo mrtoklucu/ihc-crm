@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const [companyCode, setCompanyCode] = useState(() => localStorage.getItem('crm_active_company') || 'ihc');
   const [currentUser, setCurrentUser] = useState(null);
   
   const initialRoles = [
@@ -83,11 +84,6 @@ export const AppProvider = ({ children }) => {
     },
   ];
 
-  const [roles, setRoles] = useState(() => {
-    const savedRoles = localStorage.getItem('crm_roles');
-    return savedRoles ? JSON.parse(savedRoles) : initialRoles;
-  });
-
   const initialUsers = [
     { id: 1, email: 'zafertoklucu@gmail.com', password: '1234512345', name: 'Zafer Toklucu', role: 'Admin', level: 5 },
     { id: 2, email: 'satis@gmail.com', password: '12345', name: 'Danışman', role: 'Satış Danışmanı', level: 2 },
@@ -96,47 +92,71 @@ export const AppProvider = ({ children }) => {
     { id: 5, email: 'misafir@gmail.com', password: '123', name: 'Misafir Kullanıcı', role: 'Misafir', level: 1 }
   ];
 
+  const [roles, setRoles] = useState(() => {
+    const saved = localStorage.getItem(`crm_${companyCode}_roles`);
+    return saved ? JSON.parse(saved) : initialRoles;
+  });
+
   const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem('crm_users_v2');
+    const saved = localStorage.getItem(`crm_${companyCode}_users_v2`);
     return saved ? JSON.parse(saved) : initialUsers;
   });
 
   const [leads, setLeads] = useState(() => {
-    const saved = localStorage.getItem('crm_leads');
+    const saved = localStorage.getItem(`crm_${companyCode}_leads`);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [logs, setLogs] = useState(() => {
-    const saved = localStorage.getItem('crm_logs');
+    const saved = localStorage.getItem(`crm_${companyCode}_logs`);
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Re-load data when company changes (login time)
   useEffect(() => {
-    localStorage.setItem('crm_users_v2', JSON.stringify(users));
-  }, [users]);
+    localStorage.setItem('crm_active_company', companyCode);
+    const r = localStorage.getItem(`crm_${companyCode}_roles`);
+    setRoles(r ? JSON.parse(r) : initialRoles);
+    const u = localStorage.getItem(`crm_${companyCode}_users_v2`);
+    setUsers(u ? JSON.parse(u) : initialUsers);
+    const l = localStorage.getItem(`crm_${companyCode}_leads`);
+    setLeads(l ? JSON.parse(l) : []);
+    const lg = localStorage.getItem(`crm_${companyCode}_logs`);
+    setLogs(lg ? JSON.parse(lg) : []);
+  }, [companyCode]);
 
   useEffect(() => {
-    localStorage.setItem('crm_leads', JSON.stringify(leads));
-  }, [leads]);
+    localStorage.setItem(`crm_${companyCode}_users_v2`, JSON.stringify(users));
+  }, [users, companyCode]);
+
+  useEffect(() => {
+    localStorage.setItem(`crm_${companyCode}_leads`, JSON.stringify(leads));
+  }, [leads, companyCode]);
   
   useEffect(() => {
-    localStorage.setItem('crm_roles', JSON.stringify(roles));
-  }, [roles]);
+    localStorage.setItem(`crm_${companyCode}_roles`, JSON.stringify(roles));
+  }, [roles, companyCode]);
 
   useEffect(() => {
-    localStorage.setItem('crm_logs', JSON.stringify(logs));
-  }, [logs]);
+    localStorage.setItem(`crm_${companyCode}_logs`, JSON.stringify(logs));
+  }, [logs, companyCode]);
 
-  const login = (email, password) => {
-    const user = users.find(u => u.email === email && u.password === password);
+  const login = (code, email, password) => {
+    // Check if the provided company code has users, if not, it will use initialUsers
+    const savedUsers = localStorage.getItem(`crm_${code}_users_v2`);
+    const currentCompanyUsers = savedUsers ? JSON.parse(savedUsers) : initialUsers;
+    
+    const user = currentCompanyUsers.find(u => u.email === email && u.password === password);
     if (user) {
+      setCompanyCode(code);
       setCurrentUser(user);
+      // Wait for state updates or add log locally
       const newLog = {
         id: Date.now(),
         date: new Date().toISOString(),
         user: user.name,
         action: 'Sistem Girişi',
-        detail: `${user.name} başarıyla giriş yaptı.`
+        detail: `${user.name} (${code}) başarıyla giriş yaptı.`
       };
       setLogs(prev => [newLog, ...prev].slice(0, 1000));
       return true;
@@ -263,7 +283,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, leads, roles, logs,
+      companyCode, currentUser, users, leads, roles, logs,
       login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser, addLog, updateRolePermissions, checkPermission
     }}>
       {children}

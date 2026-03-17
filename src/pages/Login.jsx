@@ -5,15 +5,16 @@ import logoImg from '../assets/ihc_logo.webp';
 
 const Login = () => {
   const { login } = useContext(AppContext);
+  const [companyCode, setCompanyCode] = useState('ihc');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const success = login(email, password);
+    const success = login(companyCode.toLowerCase().trim(), email, password);
     if (!success) {
-      setError('Hatalı e-posta veya şifre.');
+      setError('Hatalı şirket kodu, e-posta veya şifre.');
     }
   };
 
@@ -38,6 +39,17 @@ const Login = () => {
         )}
 
         <form onSubmit={handleLogin}>
+          <div className="form-group">
+            <label className="form-label">Şirket Kodu</label>
+            <input
+              type="text"
+              className="form-input"
+              value={companyCode}
+              onChange={(e) => setCompanyCode(e.target.value)}
+              required
+              placeholder="ihc, abc, vb."
+            />
+          </div>
           <div className="form-group">
             <label className="form-label">E-posta Adresi</label>
             <input
