@@ -133,10 +133,19 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
+  const deleteUser = (userId) => {
+    // Prevent deleting self
+    if (currentUser && currentUser.id === userId) {
+      alert('Kendi hesabınızı silemezsiniz!');
+      return;
+    }
+    setUsers(users.filter(u => u.id !== userId));
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, users, leads, roles,
-      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser
+      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser
     }}>
       {children}
     </AppContext.Provider>

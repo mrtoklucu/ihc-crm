@@ -3,7 +3,7 @@ import { AppContext } from '../context/AppContext';
 import { ShieldAlert, UserPlus, Settings } from 'lucide-react';
 
 const Users = () => {
-  const { currentUser, users, roles, addRole, addUser, updateUser } = useContext(AppContext);
+  const { currentUser, users, roles, addRole, addUser, updateUser, deleteUser } = useContext(AppContext);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -60,6 +60,12 @@ const Users = () => {
       password: u.password,     
       role: u.role
     });
+  };
+
+  const handleDeleteClick = (userId) => {
+    if (window.confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) {
+      deleteUser(userId);
+    }
   };
 
   return (
@@ -209,9 +215,12 @@ const Users = () => {
                     <td>
                       <span className="badge">{u.role} - Lvl {u.level}</span>
                     </td>
-                    <td>
+                    <td style={{ display: 'flex', gap: '4px' }}>
                       <button onClick={() => handleEditClick(u)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px' }}>
                         Düzenle
+                      </button>
+                      <button onClick={() => handleDeleteClick(u.id)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--error)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                        Sil
                       </button>
                     </td>
                   </tr>
