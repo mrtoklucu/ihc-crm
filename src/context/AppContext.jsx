@@ -93,7 +93,18 @@ export const AppProvider = ({ children }) => {
 
   const [roles, setRoles] = useState(() => {
     const saved = localStorage.getItem('crm_roles');
-    return saved ? JSON.parse(saved) : initialRoles;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Eski sürümden gelen rollerde 'permissions' yoksa, initialRoles'dan birleştir
+      return parsed.map(role => {
+        if (!role.permissions) {
+          const matchedInitial = initialRoles.find(ir => ir.level === role.level);
+          return { ...role, permissions: matchedInitial ? matchedInitial.permissions : {} };
+        }
+        return role;
+      });
+    }
+    return initialRoles;
   });
 
   const [users, setUsers] = useState(() => {
@@ -257,7 +268,13 @@ export const AppProvider = ({ children }) => {
 
   const checkPermission = (permKey) => {
     if (!currentUser) return false;
-    const role = roles.find(r => r.level === currentUser.level);
+    let role = roles.find(r => r.level === currentUser.level);
+    
+    // Eğer o anki rolde permissions yoksa (nadiren), initialRoles'dan çek
+    if (!role?.permissions) {
+      role = initialRoles.find(r => r.level === currentUser.level);
+    }
+    
     return role?.permissions?.[permKey] || false;
   };
 
