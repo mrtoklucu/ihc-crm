@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User } from 'lucide-react';
+import { Users, UserPlus, ListOrdered, Shield, LayoutDashboard, User, ClipboardList } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import logoImg from '../assets/ihc_logo.webp';
 
@@ -14,6 +14,7 @@ const Sidebar = () => {
     if (path === '/leads' && currentUser.level >= 2) return true;
     if (path === '/profile' && currentUser.level >= 2) return true;
     if (path === '/users' && currentUser.level === 5) return true;
+    if (path === '/logs' && currentUser.level === 5) return true;
     return false;
   };
 
@@ -57,6 +58,13 @@ const Sidebar = () => {
           <NavLink to="/users" className={`nav-link ${location.pathname === '/users' ? 'active' : ''}`}>
             <Shield size={20} />
             <span>Yetkilendirme</span>
+          </NavLink>
+        )}
+
+        {isDesktopVisible('/logs') && (
+          <NavLink to="/logs" className={`nav-link ${location.pathname === '/logs' ? 'active' : ''}`}>
+            <ClipboardList size={20} />
+            <span>Log Geçmişi</span>
           </NavLink>
         )}
       </nav>

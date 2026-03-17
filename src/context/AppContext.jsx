@@ -36,6 +36,11 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [logs, setLogs] = useState(() => {
+    const saved = localStorage.getItem('crm_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('crm_users_v2', JSON.stringify(users));
   }, [users]);
@@ -48,17 +53,43 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('crm_roles', JSON.stringify(roles));
   }, [roles]);
 
+  useEffect(() => {
+    localStorage.setItem('crm_logs', JSON.stringify(logs));
+  }, [logs]);
+
   const login = (email, password) => {
     const user = users.find(u => u.email === email && u.password === password);
     if (user) {
       setCurrentUser(user);
+      const newLog = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        user: user.name,
+        action: 'Sistem Girişi',
+        detail: `${user.name} başarıyla giriş yaptı.`
+      };
+      setLogs(prev => [newLog, ...prev].slice(0, 1000));
       return true;
     }
     return false;
   };
 
   const logout = () => {
+    if (currentUser) {
+      addLog('Sistem Çıkışı', `${currentUser.name} sistemden çıkış yaptı.`);
+    }
     setCurrentUser(null);
+  };
+
+  const addLog = (action, detail) => {
+    const newLog = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      user: currentUser ? currentUser.name : 'Sistem',
+      action,
+      detail
+    };
+    setLogs(prev => [newLog, ...prev].slice(0, 1000)); // Keep last 1000 logs
   };
 
   const addLead = (lead) => {
@@ -71,6 +102,7 @@ export const AppProvider = ({ children }) => {
       history: [{ date: new Date().toISOString(), note: 'Lead sisteme eklendi.', status: 'Yeni', author: currentUser ? currentUser.name : 'Sistem' }]
     };
     setLeads([...leads, newLead]);
+    addLog('Yeni Lead', `${newLead.nameSurname} isimli lead eklendi.`);
   };
 
   const assignLead = (leadId, userId) => {
@@ -102,6 +134,8 @@ export const AppProvider = ({ children }) => {
       }
       return lead;
     }));
+    const lead = leads.find(l => l.id === leadId);
+    addLog('Lead Güncelleme', `${lead?.nameSurname} için not/durum güncellendi: ${status || 'Not eklendi'}`);
   };
 
   const addRole = (roleName, level) => {
@@ -117,13 +151,15 @@ export const AppProvider = ({ children }) => {
       level: roleDef ? roleDef.level : 1
     };
     setUsers([...users, newUser]);
+    addLog('Kullanıcı Ekleme', `${newUser.name} (${newUser.role}) sisteme eklendi.`);
   };
 
   const updateUser = (userId, updatedData) => {
+    let oldName = '';
     setUsers(users.map(u => {
       if (u.id === userId) {
+        oldName = u.name;
         const updatedUser = { ...u, ...updatedData };
-        // If current user is updated, update the session
         if (currentUser && currentUser.id === userId) {
           setCurrentUser(updatedUser);
         }
@@ -131,21 +167,23 @@ export const AppProvider = ({ children }) => {
       }
       return u;
     }));
+    addLog('Kullanıcı Güncelleme', `${oldName} bilgileri güncellendi.`);
   };
 
   const deleteUser = (userId) => {
-    // Prevent deleting self
     if (currentUser && currentUser.id === userId) {
       alert('Kendi hesabınızı silemezsiniz!');
       return;
     }
+    const userToDelete = users.find(u => u.id === userId);
     setUsers(users.filter(u => u.id !== userId));
+    addLog('Kullanıcı Silme', `${userToDelete?.name} sistemi üzerinden silindi.`);
   };
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, leads, roles,
-      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser
+      currentUser, users, leads, roles, logs,
+      login, logout, addLead, assignLead, addRole, addUser, addLeadHistory, updateUser, deleteUser, addLog
     }}>
       {children}
     </AppContext.Provider>
