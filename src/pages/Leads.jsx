@@ -10,6 +10,13 @@ const predefinedSources = [
   'Organik/Kendisi Buldu', 'Referans', 'Web Sitesi', 'Whatsaap', 'Yandex'
 ];
 
+const countryCodesMap = {
+  '+90': 'tr', '+1': 'us', '+44': 'gb', '+49': 'de', '+33': 'fr', 
+  '+39': 'it', '+34': 'es', '+7': 'ru', '+971': 'ae', '+31': 'nl',
+  '+966': 'sa', '+965': 'kw', '+974': 'qa', '+32': 'be', '+43': 'at',
+  '+41': 'ch', '+46': 'se', '+47': 'no', '+45': 'dk'
+};
+
 const Leads = () => {
   const { currentUser, leads, users, assignLead, checkPermission } = useContext(AppContext);
   const [selectedAssignee, setSelectedAssignee] = useState({});
@@ -81,6 +88,16 @@ const Leads = () => {
       : true;
     return matchSearch && matchStatus && matchSource && matchConsultant;
   }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const getFlagCode = (lead) => {
+    if (lead.countryCode) return lead.countryCode;
+    if (!lead.phone) return null;
+    const codes = Object.keys(countryCodesMap).sort((a,b) => b.length - a.length);
+    for (const code of codes) {
+      if (lead.phone.startsWith(code)) return countryCodesMap[code];
+    }
+    return null;
+  };
 
   return (
     <div>
@@ -175,9 +192,9 @@ const Leads = () => {
                     </td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {lead.countryCode && (
+                        {getFlagCode(lead) && (
                           <img 
-                            src={`https://flagcdn.com/w40/${lead.countryCode}.png`} 
+                            src={`https://flagcdn.com/w40/${getFlagCode(lead)}.png`} 
                             alt="flag" 
                             style={{ width: '18px', borderRadius: '2px' }}
                           />
