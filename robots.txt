@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /users/
+Allow: /index.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /kvkk.html
+
+Sitemap: https://zbtcrm-ff8e0.web.app/sitemap.xml
