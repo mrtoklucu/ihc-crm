@@ -1,9 +1,17 @@
 import React, { useContext, useState } from 'react';
+import PasswordInput from '../components/PasswordInput';
 import { AppContext } from '../context/AppContext';
 import { ShieldAlert, UserPlus, Settings } from 'lucide-react';
 
+// Danismanlarin secebilecegi diller. NewLead sayfasindaki lead dilleriyle
+// ayni olmali ki otomatik atama eslesmesi calissin.
+const CONSULTANT_LANGUAGES = [
+  'Türkçe', 'İngilizce', 'Almanca', 'Fransızca', 'İspanyolca', 'İtalyanca',
+  'Rusça', 'Arapça', 'Rumence', 'Bulgarca', 'Hollandaca'
+];
+
 const Users = () => {
-  const { currentUser, users, roles, addRole, addUser, updateUser, deleteUser, updateRolePermissions } = useContext(AppContext);
+  const { currentUser, users, roles, addRole, addUser, updateUser, deleteUser, updateRolePermissions, tenantConfig } = useContext(AppContext);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleLevel, setNewRoleLevel] = useState(1);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -26,11 +34,13 @@ const Users = () => {
     { key: 'editProfile', label: 'Profil Düzenleyebilme' }
   ];
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     password: '',
-    role: ''
+    role: '',
+    languages: []
   });
 
   if (currentUser.level !== 5) {
@@ -51,23 +61,33 @@ const Users = () => {
     }
   };
 
-  const handleAddUser = (e) => {
+
+  const handleAddUser = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (editingUserId) {
+      setIsSubmitting(true);
       const roleDef = roles.find(r => r.name === newUser.role);
-      updateUser(editingUserId, { 
+      await updateUser(editingUserId, { 
         ...newUser, 
         level: roleDef ? roleDef.level : 1 
       });
       alert('Kullanıcı Başarıyla Güncellendi!');
       setEditingUserId(null);
+      setNewUser({ name: '', email: '', password: '', role: '', languages: [] });
+      setIsSubmitting(false);
     } else {
       if (newUser.name && newUser.email && newUser.password && newUser.role) {
-        addUser(newUser);
-        alert('Kullanıcı Başarıyla Eklendi!');
+        setIsSubmitting(true);
+        const success = await addUser(newUser);
+        if (success) {
+          alert('Kullanıcı Başarıyla Eklendi!');
+          setNewUser({ name: '', email: '', password: '', role: '', languages: [] });
+        }
+        setIsSubmitting(false);
       }
     }
-    setNewUser({ name: '', email: '', password: '', role: '' });
   };
 
   const handleEditClick = (u) => {
@@ -76,7 +96,8 @@ const Users = () => {
       name: u.name,
       email: u.email,
       password: u.password,     
-      role: u.role
+      role: u.role,
+      languages: u.languages || []
     });
   };
 
@@ -163,10 +184,23 @@ const Users = () => {
 
         {/* User Management */}
         <div className="card">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <UserPlus size={20} className="text-secondary" />
-            {editingUserId ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı Oluştur'}
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <UserPlus size={20} className="text-secondary" />
+              {editingUserId ? 'Kullanıcıyı Düzenle' : 'Yeni Kullanıcı Oluştur'}
+            </h2>
+            <div style={{ 
+              fontSize: '12px', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              backgroundColor: 'var(--primary-light-bg)', 
+              color: 'var(--primary-light)',
+              fontWeight: '600',
+              border: '1px solid var(--primary-light-bg)'
+            }}>
+              Lisans: {users.filter(u => u.status !== 'passive').length} / {Number(tenantConfig?.maxUsers) || 5} Aktif
+            </div>
+          </div>
           
           <form onSubmit={handleAddUser}>
             <div className="form-group">
@@ -192,10 +226,9 @@ const Users = () => {
             </div>
             <div className="form-group">
               <label className="form-label">Şifre</label>
-              <input 
+              <PasswordInput
                 required
-                type="password"
-                className="form-input" 
+                className="form-input"
                 value={newUser.password}
                 onChange={(e) => setNewUser({...newUser, password: e.target.value})}
                 placeholder="••••••••"
@@ -215,13 +248,46 @@ const Users = () => {
                 ))}
               </select>
             </div>
+            <div className="form-group">
+              <label className="form-label">Hizmet Verdiği Diller</label>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
+                Entegrasyonlardan gelen lead'ler bu dillere göre otomatik atanır.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {CONSULTANT_LANGUAGES.map((lang) => {
+                  const selected = newUser.languages.includes(lang);
+                  return (
+                    <button
+                      type="button"
+                      key={lang}
+                      onClick={() => setNewUser(prev => ({
+                        ...prev,
+                        languages: selected
+                          ? prev.languages.filter(l => l !== lang)
+                          : [...prev.languages, lang]
+                      }))}
+                      style={{
+                        padding: '9px 14px', minHeight: '36px', borderRadius: '18px', fontSize: '12px', cursor: 'pointer',
+                        border: selected ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
+                        backgroundColor: selected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                        color: selected ? 'var(--accent-color)' : 'var(--text-secondary)',
+                        fontWeight: selected ? 600 : 400
+                      }}
+                    >
+                      {lang}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSubmitting}>
                 <UserPlus size={16} />
-                {editingUserId ? 'Kullanıcıyı Güncelle' : 'Kullanıcı Kaydet'}
+                {isSubmitting ? 'İşleniyor...' : (editingUserId ? 'Kullanıcıyı Güncelle' : 'Kullanıcı Kaydet')}
               </button>
               {editingUserId && (
-                <button type="button" className="btn btn-secondary" onClick={() => {setEditingUserId(null); setNewUser({name:'',email:'',password:'',role:''})}}>İptal</button>
+                <button type="button" className="btn btn-secondary" onClick={() => {setEditingUserId(null); setNewUser({name:'',email:'',password:'',role:'',languages:[]})}}>İptal</button>
               )}
             </div>
           </form>
@@ -235,6 +301,7 @@ const Users = () => {
                 <tr>
                   <th>Kullanıcı</th>
                   <th>Rol / Seviye</th>
+                  <th style={{ textAlign: 'center' }}>Durum</th>
                   <th>İşlem</th>
                 </tr>
               </thead>
@@ -243,10 +310,26 @@ const Users = () => {
                   <tr key={u.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{u.name}</div>
-                      <div style={{ color: 'var(--text-secondary)' }}>{u.email}</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{u.email}</div>
                     </td>
                     <td>
-                      <span className="badge">{u.role} - Lvl {u.level}</span>
+                      <span className="badge" style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>
+                        {u.role} (Lvl {u.level})
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span 
+                        className={`badge ${u.status === 'passive' ? 'badge-secondary' : 'badge-success'}`}
+                        style={{ cursor: 'pointer', opacity: isSubmitting ? 0.5 : 1 }}
+                        onClick={async () => {
+                          if (isSubmitting) return;
+                          setIsSubmitting(true);
+                          await updateUser(u.id, { status: u.status === 'passive' ? 'active' : 'passive' });
+                          setIsSubmitting(false);
+                        }}
+                      >
+                        {u.status === 'passive' ? '● Pasif' : '● Aktif'}
+                      </span>
                     </td>
                     <td style={{ display: 'flex', gap: '4px' }}>
                       <button onClick={() => handleEditClick(u)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px' }}>
@@ -300,7 +383,8 @@ const Users = () => {
                         checked={role.permissions?.[perm.key] || false}
                         onChange={(e) => handlePermissionChange(role.level, perm.key, e.target.checked)}
                         disabled={role.level === 5} // Admin permissions always true & locked
-                        style={{ cursor: role.level === 5 ? 'not-allowed' : 'pointer', width: '18px', height: '18px' }}
+                        className="perm-checkbox"
+                        style={{ cursor: role.level === 5 ? 'not-allowed' : 'pointer' }}
                       />
                     </td>
                   ))}

@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Firestore kurallariyla ayni mantik: erisim Firebase Authentication
+// tokenindaki tenantSlug / superAdmin alanlarina dayanir.
+//
+// Onceki kurallar "allow read: if true" oldugu icin hasta dosyalari (fotograf,
+// tibbi belge) adresi bilen veya tahmin eden herkese aciktı.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function claims() {
+      return request.auth.token;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && claims().superAdmin == true;
+    }
+
+    function validUpload() {
+      return request.resource.size < 10 * 1024 * 1024
+             && (request.resource.contentType.matches('image/.*')
+                 || request.resource.contentType.matches('application/pdf'));
+    }
+
+    // Firma dosyalari: logo, lead ekleri, destek bileti ekleri.
+    match /tenants/{tenantSlug}/{allPaths=**} {
+      allow read: if isSuperAdmin()
+                  || (signedIn() && claims().tenantSlug == tenantSlug);
+      allow write: if (isSuperAdmin() || (signedIn() && claims().tenantSlug == tenantSlug))
+                   && validUpload();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Super admin panelinin yukledigi dosyalar.
+    match /admin/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin() && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isSuperAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

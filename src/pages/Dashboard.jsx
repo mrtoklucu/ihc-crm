@@ -1,4 +1,5 @@
 import React, { useContext, useState, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { 
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
@@ -6,7 +7,8 @@ import {
   PieChart, Pie, Cell, Legend,
   BarChart, Bar
 } from 'recharts';
-import { BarChart2, Activity, PieChart as PieIcon, Users as UsersIcon, List } from 'lucide-react';
+import { BarChart2, Activity, PieChart as PieIcon, Users as UsersIcon, List, Info } from 'lucide-react';
+import { LEAD_STATUSES } from '../config/leadStatuses';
 
 
 
@@ -31,12 +33,21 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Dashboard = () => {
   const { currentUser, leads, users } = useContext(AppContext);
+
+  if (currentUser.level < 4) {
+    return <Navigate to="/leads" />;
+  }
   
   // Date Range State
-  const [dateRange, setDateRange] = useState({
-    start: '', // YYYY-MM-DD
-    end: new Date().toISOString().split('T')[0],
-    label: 'Tümü'
+  const [dateRange, setDateRange] = useState(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 30);
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0],
+      label: '1 Ay'
+    };
   });
 
   // Predefined Range Handler
@@ -122,37 +133,87 @@ const Dashboard = () => {
   });
 
   // Süreç Durumları Dağılımı (Bar Chart)
-  const statusList = [
-    "Aranmayı Bekliyor", "Aradım, Açmadı", "Aramayı Reddeti", "Başka Bir Klinikle Anlaşmış", 
-    "Lokasyon Olumsuz", "Randevu Oluşturuldu", "İletişim Eksik", "Destek Tedavisine Uygun", 
-    "Dil Sorunu", "Engelledi/Engelledim", "Fiyatı Pahalı Buldu", "Fotoğraf Alındı, Teklif Verildi", 
-    "Fotoğraf Bekleniyor", "İletişim Kurulamıyor", "İleri Tarihte Düşünüyor", "İletişimdeyim", 
-    "İletişime Geçiyorum", "İlgisiz", "Randevu İptal Edildi", "Kaporalı Randevu Oluşturuldu", 
-    "Mesaj Attım, Bekleniyor", "Operasyona Girdi", "Operasyona Uygun Değil", "Saç Ekimi Düşünmüyor", 
-    "Sadece Fiyat Sordu", "Teklif Verildi, Kararsız", "Teklif Verildi, Olumlu", "Teklife Dönüş Yapmadı", 
-    "Telesekretere Bağlanıyor", "Yanlış Başvuru", "Yanlış Numara", "Yüzyüze Görüşme", "Tekrar Gelen Lead"
-  ];
+  const statusList = LEAD_STATUSES;
   const leadsPerStatus = statusList.map(status => {
     const count = filteredLeads.filter(l => (l.status || 'Aranmayı Bekliyor') === status).length;
     return { name: status, count };
   });
 
+  // Temsilci Yanıt Süresi Analizi (Lead Assignment to Response)
+  const responseTimeData = salesConsultants.map(sc => {
+    let totalTime = 0;
+    let leadCount = 0;
+
+    filteredLeads.filter(l => l.assigneeId === sc.id).forEach(lead => {
+      if (!lead.history || lead.history.length < 2) return;
+
+      // Atama zamanını bul (Sondan başa gitmek daha mantıklı olabilir çünkü son atama önemlidir)
+      const assignmentEvent = lead.history.find(h => h.note && h.note.includes('atandı'));
+      if (!assignmentEvent) return;
+
+      // Atamadan sonraki İLK danışman eylemini bul (Not veya Durum Değişikliği)
+      // Author ismi danışman ismiyle eşleşmeli
+      const responseEvent = lead.history.find(h => 
+        new Date(h.date) > new Date(assignmentEvent.date) && 
+        h.author === sc.name
+      );
+
+      if (responseEvent) {
+        const diff = (new Date(responseEvent.date) - new Date(assignmentEvent.date)) / (1000 * 60); // Dakika cinsinden
+        totalTime += diff;
+        leadCount++;
+      }
+    });
+
+    const avgMinutes = leadCount > 0 ? Math.round(totalTime / leadCount) : 0;
+    return { 
+      name: sc.name, 
+      avgMinutes,
+      count: leadCount,
+      displayTime: avgMinutes > 60 ? `${(avgMinutes/60).toFixed(1)} sa` : `${avgMinutes} dk`
+    };
+  });
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>Analiz Paneli</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-           <div className="filter-group" style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '8px' }}>
-              <button onClick={() => setRange(7, '1 Hafta')} className={`btn btn-sm ${dateRange.label === '1 Hafta' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Hafta</button>
-              <button onClick={() => setRange(30, '1 Ay')} className={`btn btn-sm ${dateRange.label === '1 Ay' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Ay</button>
-              <button onClick={() => setRange(365, '1 Yıl')} className={`btn btn-sm ${dateRange.label === '1 Yıl' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>1 Yıl</button>
-              <button onClick={() => setRange('all', 'Tümü')} className={`btn btn-sm ${dateRange.label === 'Tümü' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px'}}>Tümü</button>
+    <div className="dashboard-container">
+      {/* Welcome Announcement */}
+      <div style={{ 
+        background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
+        border: '1px solid rgba(99, 102, 241, 0.2)',
+        borderRadius: '12px',
+        padding: '16px 20px',
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        <div style={{ background: 'var(--accent-color)', borderRadius: '50%', padding: '8px', display: 'flex', color: 'white' }}>
+          <Info size={20} />
+        </div>
+        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)' }}>
+          Sistemimiz organik olarak sürekli gelişmektedir. Bu nedenle sistemimiz için; hataları, varsa önerilerinizi ve şikayetlerinizi <strong style={{ color: 'var(--accent-color)' }}>"DESTEK TALEBİ"</strong> bölümünden bildirmeniz bizim için çok önemli.
+        </p>
+      </div>
+
+      <div className="dashboard-header" style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title" style={{ marginBottom: 0 }}>Analiz Paneli</h1>
+          <div className="welcome-badge" style={{ color: 'var(--text-secondary)', fontSize: '13px', background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '20px' }}>{currentUser.name}</div>
+        </div>
+        
+        <div className="dashboard-filters" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
+           <div className="filter-group" style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '8px', overflowX: 'auto' }}>
+              <button onClick={() => setRange(7, '1 Hafta')} className={`btn btn-sm ${dateRange.label === '1 Hafta' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px', whiteSpace: 'nowrap'}}>1 Hafta</button>
+              <button onClick={() => setRange(30, '1 Ay')} className={`btn btn-sm ${dateRange.label === '1 Ay' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px', whiteSpace: 'nowrap'}}>1 Ay</button>
+              <button onClick={() => setRange(365, '1 Yıl')} className={`btn btn-sm ${dateRange.label === '1 Yıl' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px', whiteSpace: 'nowrap'}}>1 Yıl</button>
+              <button onClick={() => setRange('all', 'Tümü')} className={`btn btn-sm ${dateRange.label === 'Tümü' ? 'btn-primary' : 'btn-secondary'}`} style={{fontSize: '11px', padding: '6px 10px', whiteSpace: 'nowrap'}}>Tümü</button>
            </div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+           
+           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
               <input 
                 type="date" 
                 className="form-input" 
-                style={{ width: '130px', padding: '4px 8px', fontSize: '12px' }} 
+                style={{ flex: 1, minWidth: '120px', padding: '4px 8px', fontSize: '12px' }} 
                 value={dateRange.start}
                 onChange={(e) => setDateRange({...dateRange, start: e.target.value, label: 'Özel'})}
               />
@@ -160,17 +221,76 @@ const Dashboard = () => {
               <input 
                 type="date" 
                 className="form-input" 
-                style={{ width: '130px', padding: '4px 8px', fontSize: '12px' }} 
+                style={{ flex: 1, minWidth: '120px', padding: '4px 8px', fontSize: '12px' }} 
                 value={dateRange.end}
                 onChange={(e) => setDateRange({...dateRange, end: e.target.value, label: 'Özel'})}
               />
            </div>
-           <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Hoş geldiniz, {currentUser.name}</div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
         
+        {/* Lead Response Time Analysis */}
+        <div className="card" style={{ padding: '20px', gridColumn: '1 / -1' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '15px' }}>
+            <Activity size={18} color="var(--accent-color)" />
+            Temsilci Lead Yanıt Süresi Analizi
+          </h3>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+            Leadin temsilciye atanması ile temsilcinin ilk aksiyonu (not veya durum güncellemesi) arasındaki ortalama süre.
+          </p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+            <div style={{ height: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={responseTimeData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border-color)" />
+                   <XAxis type="number" stroke="var(--text-secondary)" tick={{fontSize: 12}} label={{ value: 'Dakika', position: 'bottom', fill: 'var(--text-secondary)', fontSize: 12 }} />
+                   <YAxis type="category" dataKey="name" stroke="var(--text-secondary)" tick={{fontSize: 12}} width={100} />
+                   <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)'}} />
+                   <Bar dataKey="avgMinutes" fill="#10b981" radius={[0, 4, 4, 0]} name="Ort. Yanıt (Dk)" barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Temsilci</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>İşlenen Lead</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Ort. Yanıt Süresi</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Durum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {responseTimeData.map((d, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                      <td style={{ padding: '12px 8px', fontWeight: 600 }}>{d.name}</td>
+                      <td style={{ padding: '12px 8px' }}>{d.count}</td>
+                      <td style={{ padding: '12px 8px', color: d.avgMinutes > 120 ? '#ef4444' : d.avgMinutes > 60 ? '#f59e0b' : '#10b981' }}>
+                        {d.displayTime}
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ 
+                          padding: '2px 8px', 
+                          borderRadius: '10px', 
+                          fontSize: '11px',
+                          background: d.avgMinutes > 120 ? 'rgba(239, 68, 68, 0.1)' : d.avgMinutes > 60 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                          color: d.avgMinutes > 120 ? '#ef4444' : d.avgMinutes > 60 ? '#f59e0b' : '#10b981'
+                        }}>
+                          {d.avgMinutes === 0 ? 'Veri Yok' : d.avgMinutes > 120 ? 'Yavaş' : d.avgMinutes > 60 ? 'Orta' : 'Hızlı'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         {/* Scatter Chart - Yoğunluk Haritası */}
         <div className="card" style={{ padding: '20px' }}>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontSize: '15px' }}>
@@ -289,6 +409,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
+
 
       </div>
     </div>

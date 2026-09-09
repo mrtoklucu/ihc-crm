@@ -1,0 +1,9 @@
+{
+  "appId": "com.zbtcrm.app",
+  "appName": "ZBT CRM",
+  "webDir": "dist",
+  "server": {
+    "url": "https://zbtcrmsys.com",
+    "cleartext": false
+  }
+}

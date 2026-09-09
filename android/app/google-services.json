@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "845361948395",
+    "project_id": "zbt-crm",
+    "storage_bucket": "zbt-crm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845361948395:android:9d9bf3268e8cf2c77140ae",
+        "android_client_info": {
+          "package_name": "com.zbtcrm.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDM8_LgUhP5VnRxKU93e3mMTSnrtqXceKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

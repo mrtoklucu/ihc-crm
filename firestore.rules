@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// Erisim, Firebase Authentication tokenindaki ozel alanlara dayanir:
+//   tenantSlug - kullanicinin bagli oldugu firma
+//   userId     - firma altindaki kullanici dokumaninin kimligi
+//   level      - yetki seviyesi (5 = yonetici)
+//   superAdmin - platform yoneticisi
+// Bu alanlari yalnizca sunucu yazabilir (functions/user_admin.js), istemci
+// degistiremez. Onceki kurallar "allow read, write: if true" oldugu icin tum
+// hasta kayitlari internete acikti.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function claims() {
+      return request.auth.token;
+    }
+
+    function inTenant(tenantId) {
+      return signedIn() && claims().tenantSlug == tenantId;
+    }
+
+    function isTenantAdmin(tenantId) {
+      return inTenant(tenantId) && claims().level == 5;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && claims().superAdmin == true;
+    }
+
+    match /tenants/{tenantId} {
+      // Firma dokumani giris ekraninda okunur: marka bilgisi ve mobil
+      // uygulamanin firma kodu buradan geliyor, yani giris yapmadan once
+      // erisilebilir olmasi gerekiyor. Bu yuzden icinde sir tutulmamalidir;
+      // adminPassword alani bu nedenle kaldirildi.
+      allow read: if true;
+      allow write: if isTenantAdmin(tenantId) || isSuperAdmin();
+
+      // Hasta kayitlari, kullanicilar, loglar, finans, randevular:
+      // yalnizca o firmanin oturum acmis kullanicilari.
+      match /{document=**} {
+        allow read, write: if inTenant(tenantId) || isSuperAdmin();
+      }
+    }
+
+    // Destek biletleri: her firma yalnizca kendi biletlerini gorur.
+    match /support_tickets/{ticketId} {
+      allow read: if isSuperAdmin()
+                  || (signedIn() && resource.data.tenantSlug == claims().tenantSlug);
+      allow create: if isSuperAdmin()
+                    || (signedIn() && request.resource.data.tenantSlug == claims().tenantSlug);
+      allow update: if isSuperAdmin()
+                    || (signedIn() && resource.data.tenantSlug == claims().tenantSlug);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Platform yonetimi: yalnizca super admin.
+    match /admin_users/{adminId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /admin_logs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // Tanimlanmamis her sey kapali.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

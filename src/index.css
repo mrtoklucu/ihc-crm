@@ -12,6 +12,39 @@
   --success: #10b981;
   --error: #ef4444;
   --table-hover: #334155;
+  --shadow: 0 10px 25px rgba(0,0,0,0.5);
+  --topbar-bg: rgba(15, 23, 42, 0.95);
+  --dropdown-bg: #1e293b;
+  --card-bg: #1e293b;
+  --input-bg: #0f172a;
+  --primary-light: #818cf8;
+  --primary-light-bg: rgba(99, 102, 241, 0.1);
+  --primary-light-bg-3: rgba(99, 102, 241, 0.05);
+  --text-muted: #94a3b8;
+  --title-gradient: linear-gradient(135deg, #fff, #94a3b8);
+}
+
+[data-theme="light"] {
+  --bg-color: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent-color: #b8972a;
+  --accent-hover: #9a7d1e;
+  --border-color: #e2e8f0;
+  --success: #059669;
+  --error: #dc2626;
+  --table-hover: #f8fafc;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --topbar-bg: rgba(255, 255, 255, 0.95);
+  --dropdown-bg: #ffffff;
+  --card-bg: #ffffff;
+  --input-bg: #f8fafc;
+  --primary-light: #4f46e5;
+  --primary-light-bg: rgba(79, 70, 229, 0.08);
+  --primary-light-bg-3: rgba(79, 70, 229, 0.03);
+  --text-muted: #64748b;
+  --title-gradient: linear-gradient(135deg, #0f172a, #64748b);
 }
 
 * {
@@ -25,11 +58,22 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   min-height: 100vh;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
 }
 
 /* Base Utility Classes */
+.global-loader {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
 .container {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
@@ -39,15 +83,16 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: radial-gradient(circle at top right, var(--bg-secondary) 0%, var(--bg-color) 100%);
+  background: var(--bg-color);
 }
 
 .card {
-  background: var(--bg-secondary);
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
+  width: 100%;
 }
 
 .form-group {
@@ -65,7 +110,7 @@ body {
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  background-color: var(--bg-color);
+  background-color: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-primary);
@@ -119,14 +164,9 @@ body {
   font-size: 13px;
 }
 
-/* Layout */
+/* Sidebar (LEGACY) - Hidden in desktop, maybe used in mobile */
 .sidebar {
-  width: 260px;
-  background-color: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 0;
+  display: none;
 }
 
 .sidebar-header {
@@ -143,21 +183,102 @@ body {
   letter-spacing: 1px;
 }
 
+.nav-item {
+  position: relative;
+}
+
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 12px 24px;
+  padding: 0 16px;
+  height: 44px;
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  gap: 12px;
+  gap: 8px;
   transition: all 0.2s;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .nav-link:hover, .nav-link.active {
   color: var(--text-primary);
   background-color: rgba(255, 255, 255, 0.05);
-  border-right: 3px solid var(--accent-color);
+}
+
+.nav-link.active {
+  color: var(--accent-color);
+  background-color: rgba(212, 175, 55, 0.05);
+}
+
+/* Dropdown styling */
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  padding: 8px;
+  display: none;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+}
+
+.nav-item:hover .nav-dropdown,
+.nav-item.open .nav-dropdown {
+  display: block;
+}
+
+/* Header'daki satir ici stillerin yerini alir; medya sorgusuyla ezilebilsinler. */
+.nav-dropdown-wide {
+  min-width: 240px;
+}
+
+.nav-dropdown-right {
+  left: auto;
+  right: 0;
+  min-width: 220px;
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+.nav-overlay {
+  display: none;
+}
+
+/* Cekmece icindeki cikis dugmesi yalnizca dar ekranda gorunur. */
+.nav-logout {
+  display: none;
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.dropdown-link:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+  padding-left: 16px;
 }
 
 .content-area {
@@ -165,17 +286,45 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .topbar {
-  height: 70px;
-  padding: 0 32px;
+  min-height: 100px;
+  padding: 0;
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--topbar-bg);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  position: sticky;
+  top: 0;
+  box-shadow: var(--shadow);
+}
+
+.topbar-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 32px;
+}
+
+.topbar-main {
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(10px);
+}
+
+.horizontal-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mobile-menu-btn {
+  display: none;
 }
 
 .user-info {
@@ -200,20 +349,32 @@ body {
   flex: 1;
   padding: 32px;
   overflow-y: auto;
+  background-color: var(--bg-color);
+}
+
+.page-inner-container {
+  width: 100%;
 }
 
 .page-title {
   font-size: 28px;
-  margin-bottom: 24px;
-  font-weight: 600;
+  margin-bottom: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  text-align: left;
 }
 
-/* Tables */
 .table-container {
-  background-color: var(--bg-secondary);
+  background-color: var(--card-bg);
   border-radius: 12px;
   border: 1px solid var(--border-color);
   overflow: hidden;
+  width: 100%;
+}
+
+.dashboard-container {
+  width: 100%;
 }
 
 table {
@@ -222,7 +383,7 @@ table {
 }
 
 th {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: var(--table-hover);
   padding: 16px;
   text-align: left;
   font-weight: 500;
@@ -262,8 +423,413 @@ tbody tr:hover {
   gap: 20px;
 }
 
-@media (max-width: 768px) {
+/* Modal and Suggestions Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  padding: 24px;
+  position: relative;
+  box-shadow: var(--shadow);
+  animation: modalIn 0.3s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-top: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.suggestion-card:hover {
+  border-color: var(--accent-color);
+  background: rgba(212, 175, 55, 0.05);
+  transform: translateY(-2px);
+}
+
+.suggestion-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-flag {
+  width: 32px;
+  border-radius: 4px;
+}
+
+.suggestion-number {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    height: 100vh;
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+  }
+
+  /* ----------------------------------------------------------
+   * MOBIL MENU
+   * Yatay serit dar ekrana sigmiyor ve nowrap yuzunden kirpiliyordu;
+   * ayrica alt menuler sadece :hover ile aciliyordu, dokunmatikte
+   * erisilemiyorlardi. Menu burada yandan acilan panele donusur,
+   * alt menuler panel icinde akordeon olarak acilir.
+   * -------------------------------------------------------- */
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  /* .topbar backdrop-filter tasiyor; bu, icindeki position:fixed panelin
+     kapsayici blogunu topbar yapip paneli 60px yuksekige hapsediyordu. */
+  .topbar {
+    min-height: 60px;
+    backdrop-filter: none;
+  }
+
+  .topbar-content {
+    padding: 0 12px;
+  }
+
+  .nav-overlay.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+  }
+
+  .horizontal-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 84vw;
+    max-width: 320px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 16px 12px;
+    background: var(--topbar-bg);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+  }
+
+  .horizontal-nav.open {
+    transform: translateX(0);
+  }
+
+  .nav-item {
+    width: 100%;
+  }
+
+  /* Baslik metinleri tek satira sigmiyordu; sarmasina izin veriyoruz. */
+  .nav-link {
+    white-space: normal;
+    height: auto;
+    min-height: 46px;
+    padding: 10px 12px;
+    line-height: 1.3;
+  }
+
+  /* space-between kullanilirsa ikon/yazi/ok esit dagilip yazi ortaya kaciyor
+     ve alt menusu olan basliklar digerlerinden farkli hizalaniyordu.
+     Yazi ikonun yaninda kalir, yalnizca ok saga itilir. */
+  .nav-item > .nav-link > svg:last-child {
+    margin-left: auto;
+  }
+
+  .nav-logout {
+    display: flex;
+    margin-top: 8px;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0;
+    padding-top: 14px;
+    color: #f87171;
+  }
+
+  /* Dokunmatikte hover yok; acilma yalnizca .open ile. */
+  .nav-item:hover .nav-dropdown {
+    display: none;
+  }
+
+  .nav-item.open .nav-dropdown {
+    display: block;
+  }
+
+  .nav-dropdown,
+  .nav-dropdown-wide,
+  .nav-dropdown-right {
+    position: static;
+    width: auto;
+    min-width: 0;
+    left: auto;
+    right: auto;
+    margin: 2px 0 6px 10px;
+    padding: 4px;
+    border: none;
+    border-left: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .dropdown-link {
+    min-height: 42px;
+    font-size: 14px;
+    white-space: normal;
+  }
+
+  .nav-spacer {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 16px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
   .grid-2 {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+
+  /* Responsive Tables */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  .user-info .user-avatar {
+    margin-right: 0 !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .welcome-text {
+    display: none;
+  }
+
+  /* Sol taraftaki marka blogu genis kalinca sagdaki .user-info (tema, dil,
+     bildirim, cikis) ekranin disina itiliyor ve tiklanamiyordu. */
+  .topbar-main {
+    gap: 8px;
+  }
+
+  .topbar-brand {
+    min-width: 0;
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+
+  .topbar-brand-text,
+  .topbar-welcome {
+    display: none !important;
+  }
+
+  .user-info {
+    flex: 0 0 auto;
+    margin-left: auto;
+    gap: 4px;
+  }
+
+  .user-info > div {
+    margin-right: 0 !important;
+    padding-right: 8px !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    min-height: 60px;
+  }
+  
+  .user-info span:not(.user-avatar) {
+    display: none;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .nav-link {
+    padding: 12px 16px;
+  }
+
+  /* Lead listesi filtreleri tek satirda kalip sayfayi saga tasiriyordu. */
+  .lead-filters {
+    width: 100%;
+  }
+
+  .lead-filters select {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+
+/* ============================================================
+ * DOKUNMA HEDEFLERI
+ * ============================================================
+ * Fare yerine parmakla kullanilan cihazlarda kucuk kontroller
+ * isabetli tiklanamiyor. Asagidaki kurallar yalnizca dokunmatik
+ * cihazlarda devreye girer, masaustu gorunumu degistirmez.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 38px;
+  }
+
+  .btn-sm {
+    min-height: 34px;
+    padding: 8px 12px;
+  }
+
+  .form-input,
+  select.form-input {
+    min-height: 42px;
+  }
+
+  /* Rol/yetki matrisindeki onay kutulari varsayilan olarak 18px geliyor. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    accent-color: var(--accent-color);
+  }
+
+  /* Onay kutusunun etrafinda tiklanabilir bosluk birakir. */
+  td input[type="checkbox"] {
+    margin: 6px;
+  }
+
+  .theme-toggle-btn {
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  .topbar select {
+    min-height: 34px;
+  }
+
+  /* Tablolarda satirlar parmakla ayirt edilebilsin. */
+  table td,
+  table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+/* Yetki matrisi onay kutusu: masaustunde kompakt, dokunmatikte buyuk. */
+.perm-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .perm-checkbox {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Buton icindeki bekleme ikonu icin. */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

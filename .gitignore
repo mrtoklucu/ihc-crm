@@ -22,3 +22,45 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ortam degiskenleri (gercek degerler)
+.env
+.env.*
+!.env.example
+
+# Firebase
+.firebase/
+firebase-debug.log
+functions/node_modules
+
+# Capacitor / Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/release/
+*.apk
+*.aab
+
+# Imzalama anahtari - ASLA depoya girmemeli
+*.jks
+*.keystore
+keystore.properties
+
+# Eski CRM veri dosyalari - gercek hasta kayitlari, depoya girmemeli
+Danisan_Listesi.pdf
+Danisan_Listesi.xlsx
+*.xlsx
+seed.mjs
+tmp_*
+
+# Veri yedekleri - gercek hasta kayitlari, depoya girmemeli
+backup_*/
+
+# Derlenmis cikti - depoya girmemeli (icinde eski surumlerin anahtarlari kaliyor)
+public_dist/
+
+# Kurulum betikleri - icinde baslangic sifreleri var
+seed_tenant.mjs

@@ -30,7 +30,7 @@ const Logs = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>Sistem İşlem Günlükleri (Log)</h1>
+        <h1 className="page-title" style={{ marginBottom: 0 }}>Sistem İşlem Günlükleri (Log)</h1>
         <div className="search-box" style={{ width: '300px', position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
           <input 
