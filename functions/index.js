@@ -11,6 +11,13 @@ const app = express();
 app.use(cors);
 app.use(express.json());
 
+/**
+ * Telefon numarasini karsilastirma anahtarina cevirir.
+ * src/utils/phoneUtils.js icindeki normalizePhone ile ayni kurali uygular:
+ * rakam disi her sey ve bastaki sifirlar atilir.
+ */
+const phoneKey = (phone) => String(phone ?? "").replace(/\D/g, "").replace(/^0+/, "");
+
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || "zbtcrm_meta_v2026";
 
 /**
@@ -163,14 +170,82 @@ app.post("/v1/leads/webform/:tenantSlug", async (req, res) => {
       });
     }
 
-    const now = new Date().toISOString();
-    const note = (body.note || "").toString().trim();
+    const submittedAt = new Date().toISOString();
+    const incomingNote = (body.note || "").toString().trim();
+
+    // Ayni numara ikinci kez kaydedilmez. Basvuru kaybolmasin diye mevcut
+    // kaydin gecmisine islenir ve ilgili kisiye bildirim gider; boylece ayni
+    // hasta icin iki kayit olusmaz ama tekrar basvurdugu gorulur.
+    //
+    // 6.905 kaydi her istekte taramak yerine normallestirilmis anahtarla
+    // sorgulaniyor (phoneKey).
+    const key = phoneKey(phone);
+    if (key) {
+      const clash = await tenantRef.collection("leads")
+        .where("phoneKey", "==", key).limit(1).get();
+
+      if (!clash.empty) {
+        const existingDoc = clash.docs[0];
+        const existing = existingDoc.data();
+
+        const parts = [];
+        if (nameSurname) parts.push(nameSurname);
+        if (body.source) parts.push(String(body.source));
+        if (incomingNote) parts.push(incomingNote);
+
+        await existingDoc.ref.update({
+          hasRepeatSubmission: true,
+          lastRepeatAt: submittedAt,
+          repeatCount: admin.firestore.FieldValue.increment(1),
+          history: admin.firestore.FieldValue.arrayUnion({
+            date: submittedAt,
+            note: parts.length
+              ? `Ayni numaradan tekrar basvuru geldi: ${parts.join(" - ")}`
+              : "Ayni numaradan tekrar basvuru geldi.",
+            status: existing.status || "Havuzda",
+            author: "Sistem"
+          })
+        });
+
+        // Atanmissa danismanina, havuzdaysa yoneticilere haber ver.
+        try {
+          if (existing.assigneeId) {
+            const userDoc = await tenantRef.collection("users").doc(existing.assigneeId).get();
+            if (userDoc.exists) {
+              await sendToUser(
+                tenantSlug,
+                { id: userDoc.id, ...userDoc.data() },
+                "Leadiniz tekrar basvurdu",
+                leadNotificationBody(existing),
+                { leadId: existingDoc.id, tenantSlug, type: "lead-repeat" }
+              );
+            }
+          } else {
+            await notifyPoolLead(tenantSlug, existingDoc.id, existing);
+          }
+        } catch (notifyError) {
+          console.error("Tekrar basvuru bildirimi hatasi:", notifyError.message);
+        }
+
+        console.log(`Web API repeat submission for ${tenantSlug}: ${existingDoc.id}`);
+        return res.status(200).json({
+          ok: true,
+          duplicate: true,
+          leadId: existingDoc.id,
+          message: "Bu numara zaten kayitli; basvuru mevcut kayda islendi."
+        });
+      }
+    }
+
+    const now = submittedAt;
+    const note = incomingNote;
 
     // Sekil, panelden eklenen leadlerle birebir ayni olmali ki
     // liste ve filtreler ayni sekilde calissin.
     const newLead = {
       nameSurname: nameSurname || "Isimsiz Basvuru",
       phone,
+      phoneKey: key,
       email,
       country: (body.country || "").toString().trim(),
       language: (body.language || "").toString().trim(),
@@ -381,15 +456,15 @@ exports.autoAssignLead = functions
         status: "Aranmayı Bekliyor",
         autoAssigned: true,
         assignedLanguage: matchedLanguage,
-        history: [
-          ...(lead.history || []),
-          {
-            date: now,
-            note: `Otomatik atama: ${matchedLanguage} bilen ${assignee.name} adli danismana yonlendirildi.`,
-            status: "Aranmayı Bekliyor",
-            author: "Sistem",
-          },
-        ],
+        // arrayUnion kullaniliyor: tetikleyici lead olusur olusmaz calisiyor ve
+        // bu sirada baska bir yazim (ornegin ayni numaradan tekrar basvuru)
+        // gecmise kayit ekleyebiliyor. Diziyi baştan yazmak o kaydi siliyordu.
+        history: admin.firestore.FieldValue.arrayUnion({
+          date: now,
+          note: `Otomatik atama: ${matchedLanguage} bilen ${assignee.name} adli danismana yonlendirildi.`,
+          status: "Aranmayı Bekliyor",
+          author: "Sistem",
+        }),
       });
 
       // Round-robin sirasi icin son atanani sakla.

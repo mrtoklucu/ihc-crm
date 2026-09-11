@@ -86,3 +86,37 @@ export const getPhoneSuggestions = (phone) => {
 
   return suggestions;
 };
+
+/**
+ * Telefon numarasini karsilastirma icin sadelestirir: rakam disindaki her sey
+ * ve bastaki sifirlar atilir.
+ */
+export const normalizePhone = (phone) => String(phone ?? '').replace(/\D/g, '').replace(/^0+/, '');
+
+/**
+ * Iki numaranin ayni kisiye ait olup olmadigini soyler.
+ *
+ * Birebir esitlik yetmiyor: ayni numara bir kayitta ulke koduyla
+ * (+33698521441), digerinde kodsuz (0698521441) girilmis olabiliyor. Bu yuzden
+ * biri digerinin sonuyla ortusuyorsa da ayni sayilir. Yanlis eslesmeyi
+ * onlemek icin ortusen kisim en az 9 hane olmali.
+ */
+export const isSamePhone = (a, b) => {
+  const x = normalizePhone(a);
+  const y = normalizePhone(b);
+  if (!x || !y) return false;
+  if (x.length < 7 || y.length < 7) return false;
+  if (x === y) return true;
+
+  const shorter = x.length < y.length ? x : y;
+  const longer = x.length < y.length ? y : x;
+  return shorter.length >= 9 && longer.endsWith(shorter);
+};
+
+/** Verilen numarayla eslesen ilk leadi dondurur. */
+export const findLeadByPhone = (leads, phone, excludeId = null) => {
+  if (!phone) return null;
+  return (leads || []).find(
+    (l) => String(l.id) !== String(excludeId) && isSamePhone(l.phone, phone)
+  ) || null;
+};

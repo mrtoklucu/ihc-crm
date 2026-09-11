@@ -182,6 +182,7 @@ const Integrations = () => {
 
     setIsSyncing(true);
     let newLeadsCount = 0;
+    let duplicateCount = 0;
     const existingMetaIds = new Set(
       leads.filter(l => l.metaInfo?.leadId).map(l => l.metaInfo.leadId)
     );
@@ -216,8 +217,9 @@ const Integrations = () => {
                 note: `Meta Senkronizasyonu ile içe aktarıldı. (${leadRemote.ad_name || 'Reklam'})`
               };
 
-              const success = await addLead(transformedLead);
-              if (success) newLeadsCount++;
+              const result = await addLead(transformedLead);
+              if (result.success) newLeadsCount++;
+              else if (result.duplicate) duplicateCount++;
             }
           }
         }
@@ -251,6 +253,7 @@ const Integrations = () => {
     
     setIsSyncing(true);
     let newLeadsCount = 0;
+    let duplicateCount = 0;
     const existingMetaIds = new Set(
         leads.filter(l => l.metaInfo?.leadId).map(l => l.metaInfo.leadId)
     );
@@ -275,8 +278,9 @@ const Integrations = () => {
                         metaInfo: { leadId: leadRemote.id, adId: leadRemote.ad_id, adName: leadRemote.ad_name, formId: leadRemote.form_id },
                         note: `Meta Manuel Sync (${directFormId}) ile içe aktarıldı.`
                     };
-                    const success = await addLead(transformedLead);
-                    if (success) newLeadsCount++;
+                    const result = await addLead(transformedLead);
+                    if (result.success) newLeadsCount++;
+                    else if (result.duplicate) duplicateCount++;
                 }
             }
         }
@@ -441,8 +445,10 @@ const Integrations = () => {
       note: `${source} entegrasyonu üzerinden gelen gerçek zamanlı lead.`
     };
     
-    const success = await addLead(mockLead);
-    if (success) {
+    const result = await addLead(mockLead);
+    if (result.duplicate) {
+      alert(`Bu numara zaten kayıtlı: ${result.duplicate.nameSurname || "isimsiz kayıt"}`);
+    } else if (result.success) {
       alert(`Harika! ${source}'dan gelen yeni lead havuzda görüntülenebilir.`);
       addLog('Entegrasyon', `${source} üzerinden gerçek lead simüle edildi.`);
     }

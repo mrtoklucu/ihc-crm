@@ -342,6 +342,17 @@ const Leads = () => {
                       <span className="badge" style={getStatusStyle(lead.status || 'Aranmayı Bekliyor', statusCategories)}>
                         {lead.status || 'Aranmayı Bekliyor'}
                       </span>
+                      {/* Ayni numaradan tekrar basvuru geldiyse isaretlenir;
+                          ikinci kayit olusturulmadigi icin tek belirti budur. */}
+                      {lead.hasRepeatSubmission && (
+                        <span
+                          className="badge"
+                          title={`Aynı numaradan ${lead.repeatCount || 1} kez daha başvuru geldi`}
+                          style={{ marginLeft: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8' }}
+                        >
+                          Tekrar {lead.repeatCount > 1 ? `×${lead.repeatCount}` : ''}
+                        </span>
+                      )}
                     </td>
                     <td onClick={() => navigate(`/leads/${lead.id}`)} style={{ cursor: 'pointer' }}>{new Date(lead.createdAt).toLocaleDateString('tr-TR')}</td>
                     <td>

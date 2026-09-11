@@ -1,7 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { PlusCircle, Globe, CheckCircle2, ChevronDown, ChevronUp, Activity, ClipboardList, Plane, Hotel, Image as ImageIcon, Trash2, Camera, AlertCircle } from 'lucide-react';
-import { getCountryFromPhone, getPhoneSuggestions } from '../utils/phoneUtils';
+import { getCountryFromPhone, getPhoneSuggestions, findLeadByPhone } from '../utils/phoneUtils';
 
 const predefinedSources = [
   'Acente',
@@ -33,6 +34,7 @@ const predefinedLanguages = [
 
 const NewLead = () => {
   const { currentUser, users, addLead, checkPermission, uploadFile, leads } = useContext(AppContext);
+  const navigate = useNavigate();
   const [success, setSuccess] = useState(false);
   const [duplicateLead, setDuplicateLead] = useState(null);
   const [phoneSuggestions, setPhoneSuggestions] = useState([]);
@@ -119,17 +121,11 @@ const NewLead = () => {
       }
     }
 
-    // Check for duplicate phone number
-    if (name === 'phone' && value.length > 5) {
-      const cleanNew = value.replace(/\D/g, '');
-      const duplicate = leads.find(l => {
-        if (!l.phone) return false;
-        const cleanOld = l.phone.replace(/\D/g, '');
-        return cleanOld === cleanNew && cleanNew.length > 7; // Only match if it looks like a real number
-      });
-      setDuplicateLead(duplicate || null);
-    } else if (name === 'phone') {
-      setDuplicateLead(null);
+    // Mukerrer telefon kontrolu. Ayni numara bir kayitta ulke koduyla,
+    // digerinde kodsuz girilmis olabilecegi icin karsilastirma
+    // findLeadByPhone ile yapiliyor.
+    if (name === 'phone') {
+      setDuplicateLead(value.length > 5 ? findLeadByPhone(leads, value) : null);
     }
 
     setFormData(newFormData);
@@ -145,10 +141,22 @@ const NewLead = () => {
     setShowPhoneModal(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = addLead(formData);
-    if (success) {
+
+    // Ayni numarayla ikinci kayit olusturulamaz.
+    const existing = findLeadByPhone(leads, formData.phone);
+    if (existing) {
+      setDuplicateLead(existing);
+      return;
+    }
+
+    const result = await addLead(formData);
+    if (result.duplicate) {
+      setDuplicateLead(result.duplicate);
+      return;
+    }
+    if (result.success) {
       setSuccess(true);
       setFormData({
         nameSurname: '', email: '', phone: '', country: '', countryCode: '', gender: '', birthDate: '', source: '', language: '', note: '',
@@ -207,21 +215,45 @@ const NewLead = () => {
               )}
             </div>
             {duplicateLead ? (
-              <div style={{ 
-                marginTop: '10px', padding: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', 
-                border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px',
-                display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171'
+              <div style={{
+                marginTop: '10px', padding: '14px',
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px'
               }}>
-                <AlertCircle size={16} />
-                <span style={{ fontSize: '12px', fontWeight: 600 }}>
-                  Bu numara zaten kayıtlı! ({duplicateLead.nameSurname})
-                </span>
-                <button 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171', marginBottom: '12px' }}>
+                  <AlertCircle size={18} />
+                  <strong style={{ fontSize: '13px' }}>Bu numara zaten kayıtlı — yeni kayıt oluşturulamaz.</strong>
+                </div>
+
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px',
+                  fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px'
+                }}>
+                  <span>Ad Soyad:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{duplicateLead.nameSurname || '—'}</strong>
+                  <span>Telefon:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{duplicateLead.phone || '—'}</strong>
+                  <span>Durum:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{duplicateLead.status || '—'}</strong>
+                  <span>Temsilci:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>
+                    {users.find(u => String(u.id) === String(duplicateLead.assigneeId))?.name || 'Atanmamış'}
+                  </strong>
+                  <span>Kaynak:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>{duplicateLead.source || '—'}</strong>
+                  <span>Eklenme:</span>
+                  <strong style={{ color: 'var(--text-primary)' }}>
+                    {duplicateLead.createdAt ? new Date(duplicateLead.createdAt).toLocaleDateString('tr-TR') : '—'}
+                  </strong>
+                </div>
+
+                <button
                   type="button"
-                  onClick={() => alert(`Bu numara ${duplicateLead.nameSurname} adına kayıtlıdır. Durumu: ${duplicateLead.status}`)}
-                  style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: '#f87171', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer' }}
+                  className="btn btn-sm"
+                  onClick={() => navigate(`/leads/${duplicateLead.id}`)}
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.35)' }}
                 >
-                  Detay
+                  Mevcut kaydı aç ve düzenle
                 </button>
               </div>
             ) : (
@@ -548,7 +580,7 @@ const NewLead = () => {
           )}
 
           <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-            <button type="submit" className="btn btn-primary" style={{ padding: '12px 32px' }} disabled={uploading}>
+            <button type="submit" className="btn btn-primary" style={{ padding: '12px 32px' }} disabled={uploading || !!duplicateLead}>
               <PlusCircle size={20} />
               {uploading ? 'Yükleniyor...' : 'Kaydet'}
             </button>

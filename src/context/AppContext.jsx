@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import { db, auth } from '../config/firebase';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { findLeadByPhone, normalizePhone } from '../utils/phoneUtils';
 import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, query, orderBy, limit as firestoreLimit, increment, where } from 'firebase/firestore';
 import { storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -328,9 +329,25 @@ export const AppProvider = ({ children, tenantSlug, tenantConfig }) => {
     }
   };
 
+  /**
+   * Yeni lead ekler.
+   *
+   * Ayni telefon numarasi ikinci kez eklenemez. Kontrol formda da yapiliyor
+   * ama son soz burada: baska bir yerden cagrildiginda da mukerrer kayit
+   * olusmasin. Engellenen durumda mevcut kayit geri donuluyor ki arayuz
+   * kullaniciya hangi kayitla catistigini gosterebilsin.
+   */
   const addLead = async (lead) => {
+    const existing = findLeadByPhone(leads, lead.phone);
+    if (existing) {
+      return { success: false, duplicate: existing };
+    }
+
     const newLead = { 
       ...lead, 
+      // Web API tarafi mukerrer kontrolunu bu alanla yapiyor (her kaydi
+      // taramak yerine). Panelden eklenenlerin de tasimasi gerekiyor.
+      phoneKey: normalizePhone(lead.phone),
       assigneeId: null, 
       createdAt: new Date().toISOString(),
       status: 'Havuzda',
@@ -346,10 +363,10 @@ export const AppProvider = ({ children, tenantSlug, tenantConfig }) => {
       
       setLeads(prev => [...prev, { id: docRef.id, ...newLead }]);
       addLog('Yeni Lead', `${newLead.nameSurname} isimli lead eklendi.`);
-      return true;
+      return { success: true, id: docRef.id };
     } catch (err) {
       alert("Hata oluştu: " + err.message);
-      return false;
+      return { success: false, error: err.message };
     }
   };
 
