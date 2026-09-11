@@ -1,21 +1,27 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { I18nContext } from '../context/I18nContext';
-import { User, Lock, Mail, Globe } from 'lucide-react';
+import { User, Lock, Mail, Globe, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 const Profile = () => {
-  const { currentUser, updateUser } = useContext(AppContext);
+  const { currentUser, updateUser, requestPasswordReset, emailVerified, sendVerificationEmail } = useContext(AppContext);
   const { t, currentLang, changeLanguage, languages } = useContext(I18nContext);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [language, setLanguage] = useState('tr');
+  const [resetSent, setResetSent] = useState(false);
+  const [verifySent, setVerifySent] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+
+  const handlePasswordReset = async () => {
+    setResetBusy(true);
+    await requestPasswordReset(currentUser.email);
+    setResetBusy(false);
+    setResetSent(true);
+  };
 
   useEffect(() => {
     if (currentUser) {
       setEmail(currentUser.email);
-      // Sifre artik Firebase Auth'ta ve okunamiyor; alan bos baslar, yalnizca
-      // kullanici yeni bir sifre yazarsa degistirilir.
-      setPassword('');
       setLanguage(currentUser.language || currentLang);
     }
   }, [currentUser]);
@@ -32,21 +38,12 @@ const Profile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    if (password && password.length < 8) {
-      alert('Şifre en az 8 karakter olmalı.');
-      return;
-    }
-
-    // Sifre yalnizca doldurulduysa gonderilir; bos birakilirsa degismez.
-    const changes = { email, language };
-    if (password) changes.password = password;
-
-    const ok = await updateUser(currentUser.id, changes);
+    // Sifre bu formdan gonderilmiyor; e-posta onayli ayri akista degisiyor.
+    const ok = await updateUser(currentUser.id, { email, language });
     if (!ok) return;
 
     changeLanguage(language);
-    setPassword('');
-    alert(password ? 'Profil ve şifre güncellendi!' : 'Profil başarıyla güncellendi!');
+    alert('Profil başarıyla güncellendi!');
   };
 
   return (
@@ -70,19 +67,76 @@ const Profile = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
+            {/* Kalici durum gostergesi: bant yalnizca dogrulanmamisken cikiyor,
+                burasi her zaman gorunur ki durum belirsiz kalmasin. */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+              marginTop: '10px', padding: '10px 12px', borderRadius: '8px',
+              background: emailVerified ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+              border: `1px solid ${emailVerified ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'}`
+            }}>
+              {emailVerified ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--success)', fontWeight: 600 }}>
+                  <ShieldCheck size={16} /> E-posta doğrulandı
+                </span>
+              ) : (
+                <>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#f59e0b', fontWeight: 600 }}>
+                    <ShieldAlert size={16} /> E-posta doğrulanmadı
+                  </span>
+                  {verifySent ? (
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Doğrulama e-postası gönderildi.
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' }}
+                      onClick={async () => { if (await sendVerificationEmail()) setVerifySent(true); }}
+                    >
+                      Doğrulama e-postası gönder
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           
           <div className="form-group">
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Lock size={14} /> {t('password')}
             </label>
-            <input 
-              type="text"
-              className="form-input" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Değiştirmek istemiyorsanız boş bırakın"
-            />
+            {/* Sifre burada dogrudan degistirilmiyor: degisikligin hesabin
+                sahibinden geldigini dogrulamak icin kayitli adrese baglanti
+                gonderiliyor, yeni sifre orada belirleniyor. */}
+            <div style={{
+              padding: '14px', borderRadius: '8px',
+              background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)'
+            }}>
+              {resetSent ? (
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--success)', lineHeight: 1.6 }}>
+                  Şifre belirleme bağlantısı <strong>{currentUser.email}</strong> adresine
+                  gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.
+                </p>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    Güvenlik için şifre buradan doğrudan değiştirilmiyor.
+                    Kayıtlı adresinize bağlantı gönderilir, yeni şifrenizi orada belirlersiniz.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handlePasswordReset}
+                    disabled={resetBusy}
+                  >
+                    {resetBusy ? 'Gönderiliyor...' : 'Şifre değiştirme bağlantısı gönder'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="form-group">

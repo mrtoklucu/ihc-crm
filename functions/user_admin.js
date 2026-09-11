@@ -192,15 +192,40 @@ exports.syncUserAccount = functions.region(REGION).https.onCall(async (data, con
   const user = userDoc.data();
   if (!user.authUid) return { ok: true, skipped: "auth hesabi yok" };
 
+  const authUser = await admin.auth().getUser(user.authUid);
   const disabled = user.status === "passive";
-  await admin.auth().updateUser(user.authUid, { disabled });
+  const email = normalizeEmail(user.email);
+
+  // E-posta Auth tarafinda da guncellenmeli: giris adresi orasi. Yalnizca
+  // Firestore guncellenirse kullanici yeni adresiyle giris yapamaz.
+  const patch = { disabled };
+  let emailChanged = false;
+  if (email && email !== authUser.email) {
+    patch.email = email;
+    emailChanged = true;
+  }
+
+  try {
+    await admin.auth().updateUser(user.authUid, patch);
+  } catch (err) {
+    if (err.code === "auth/email-already-exists") {
+      throw new functions.https.HttpsError("already-exists", "Bu e-posta başka bir hesapta kayıtlı.");
+    }
+    throw new functions.https.HttpsError("internal", err.message);
+  }
+
   await admin.auth().setCustomUserClaims(user.authUid, {
     tenantSlug: caller.tenantSlug,
     userId: targetUserId,
     level: Number(user.level) || 1,
   });
 
-  return { ok: true, disabled };
+  // Adres degisince dogrulama dusar; rozet yaniltmasin diye kayda da yazilir.
+  if (emailChanged) {
+    await userRef.update({ emailVerified: false });
+  }
+
+  return { ok: true, disabled, emailChanged, email };
 });
 
 /**

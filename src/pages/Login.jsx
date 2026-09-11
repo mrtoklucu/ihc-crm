@@ -8,11 +8,27 @@ import fallbackLogoImg from '../assets/ihc_logo.webp';
 import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
 
 const Login = () => {
-  const { login, tenantConfig, tenantSlug } = useContext(AppContext);
+  const { login, tenantConfig, tenantSlug, requestPasswordReset } = useContext(AppContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Sifre sifirlama: aciklandiginda e-posta alani ustteki formdan devralinir.
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+
+  const handleReset = async () => {
+    if (!email.trim()) {
+      setError('Önce e-posta adresinizi yazın.');
+      return;
+    }
+    setResetBusy(true);
+    setError('');
+    await requestPasswordReset(email);
+    setResetBusy(false);
+    setResetSent(true);
+  };
 
   // login artik Firebase Auth'a gittigi icin asenkron.
   const handleLogin = async (e) => {
@@ -107,6 +123,39 @@ const Login = () => {
             {busy ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </button>
         </form>
+
+        <div style={{ marginTop: '16px', textAlign: 'center' }}>
+          {resetSent ? (
+            <p style={{ fontSize: '12px', color: 'var(--success)', lineHeight: 1.6, margin: 0 }}>
+              Adresiniz kayıtlıysa şifre sıfırlama bağlantısı gönderildi.
+              Gelen kutunuzu ve spam klasörünü kontrol edin.
+            </p>
+          ) : resetOpen ? (
+            <div>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: '10px' }}>
+                Yukarıdaki alana e-posta adresinizi yazın, size şifre belirleme
+                bağlantısı gönderelim.
+              </p>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleReset}
+                disabled={resetBusy}
+                style={{ width: '100%', background: 'transparent', color: 'white', border: `1px solid ${brand.color}` }}
+              >
+                {resetBusy ? 'Gönderiliyor...' : 'Sıfırlama bağlantısı gönder'}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setResetOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+            >
+              Şifremi unuttum
+            </button>
+          )}
+        </div>
 
         {showAppDownload && (
           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>

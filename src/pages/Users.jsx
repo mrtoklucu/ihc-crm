@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import PasswordInput from '../components/PasswordInput';
 import { AppContext } from '../context/AppContext';
-import { ShieldAlert, UserPlus, Settings } from 'lucide-react';
+import { ShieldAlert, UserPlus, Settings, ShieldCheck } from 'lucide-react';
 
 // Danismanlarin secebilecegi diller. NewLead sayfasindaki lead dilleriyle
 // ayni olmali ki otomatik atama eslesmesi calissin.
@@ -95,7 +95,7 @@ const Users = () => {
     setNewUser({
       name: u.name,
       email: u.email,
-      password: u.password,     
+      password: '', // sifre artik kayitta tutulmuyor; bos birakilirsa degismez
       role: u.role,
       languages: u.languages || []
     });
@@ -227,11 +227,11 @@ const Users = () => {
             <div className="form-group">
               <label className="form-label">Şifre</label>
               <PasswordInput
-                required
+                required={!editingUserId}
                 className="form-input"
                 value={newUser.password}
                 onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                placeholder="••••••••"
+                placeholder={editingUserId ? "Değiştirmek istemiyorsanız boş bırakın" : "En az 8 karakter"}
               />
             </div>
             <div className="form-group">
@@ -310,7 +310,20 @@ const Users = () => {
                   <tr key={u.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{u.name}</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{u.email}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{u.email}</span>
+                        {/* Dogrulama durumu kullanici giris yaptiginda dokumanina
+                            yaziliyor; hic giris yapmamis hesap icin bilinmiyor. */}
+                        {u.emailVerified === true ? (
+                          <span title="E-posta doğrulandı" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', color: 'var(--success)' }}>
+                            <ShieldCheck size={12} /> Doğrulandı
+                          </span>
+                        ) : (
+                          <span title="E-posta doğrulanmadı" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', color: '#f59e0b' }}>
+                            <ShieldAlert size={12} /> Doğrulanmadı
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span className="badge" style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)' }}>

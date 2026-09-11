@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { db, auth } from '../config/firebase';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit as firestoreLimit, increment, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc, addDoc, query, orderBy, limit as firestoreLimit, increment, where } from 'firebase/firestore';
 import { storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getStorageKey, isTenantUserLimitReached } from '../utils/tenantUtils';
@@ -270,6 +270,24 @@ export const AppProvider = ({ children, tenantSlug, tenantConfig }) => {
     }
   };
 
+  /**
+   * Sifre sifirlama baglantisi gonderir.
+   *
+   * Adresin kayitli olup olmadigi disari bildirilmez: aksi halde bu ekran
+   * hangi e-postalarin sistemde oldugunu ogrenmek icin kullanilabilirdi.
+   * Bu yuzden her durumda basarili donuyor.
+   */
+  const requestPasswordReset = async (email) => {
+    const normalizedEmail = String(email ?? '').trim().toLowerCase();
+    if (!normalizedEmail) return false;
+    try {
+      await sendPasswordResetEmail(auth, normalizedEmail);
+    } catch (err) {
+      console.error("Sifirlama e-postasi gonderilemedi:", err.code || err.message);
+    }
+    return true;
+  };
+
   /** Giris yapmis kullaniciya dogrulama e-postasi gonderir. */
   const sendVerificationEmail = async () => {
     if (!auth.currentUser) return false;
@@ -480,15 +498,19 @@ export const AppProvider = ({ children, tenantSlug, tenantConfig }) => {
       
       setUsers(prev => prev.map(u => String(u.id) === String(userId) ? { ...u, ...updatedData } : u));
 
-      // Seviye veya durum degistiyse Auth tarafindaki yetki alanlarini esitle.
-      if (updatedData.level !== undefined || updatedData.status !== undefined) {
-        try {
-          await httpsCallable(getFunctions(undefined, 'europe-west3'), 'syncUserAccount')({
-            targetUserId: String(userId),
-          });
-        } catch (err) {
-          console.error("Yetki esitlenemedi:", err);
-        }
+      // Auth tarafi her guncellemeden sonra kosulsuz esitlenir.
+      //
+      // Once yalnizca level/status degisiminde cagriliyordu; e-posta
+      // degisikligi Auth'a hic yansimiyordu ve kullanici yeni adresiyle
+      // giris yapamiyordu. Hangi alanin Auth'i ilgilendirdigini burada
+      // saymak yerine karari sunucudaki fonksiyona birakiyoruz.
+      try {
+        await httpsCallable(getFunctions(undefined, 'europe-west3'), 'syncUserAccount')({
+          targetUserId: String(userId),
+        });
+      } catch (err) {
+        console.error("Hesap esitlenemedi:", err);
+        alert("Kullanıcı kaydedildi ancak giriş bilgileri eşitlenemedi: " + (err.message || err));
       }
 
       return true;
@@ -687,7 +709,7 @@ export const AppProvider = ({ children, tenantSlug, tenantConfig }) => {
 
   return (
     <AppContext.Provider value={{
-      currentUser, authReady, emailVerified, sendVerificationEmail, users, leads, roles, logs, tickets,
+      currentUser, authReady, emailVerified, sendVerificationEmail, requestPasswordReset, users, leads, roles, logs, tickets,
       tenantSlug, tenantConfig: currentTenantConfig,
       billingWarning,
       login, logout, addLead, deleteLead, assignLead, addUser, addLeadHistory: updateLeadHistory, updateLeadData, updateUser, addLog, checkPermission,
