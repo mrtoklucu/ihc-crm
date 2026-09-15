@@ -9,6 +9,7 @@ import AdminSidebar from './components/admin/AdminSidebar';
 import AdminHeader from './components/admin/AdminHeader';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminLogs from './pages/admin/AdminLogs';
+import AdminReleaseNotes from './pages/admin/AdminReleaseNotes';
 import './admin.css';
 
 const VERSION_TIMESTAMP = 1774523280000;
@@ -104,6 +105,8 @@ const AdminApp = () => {
         return <Billing />;
       case 'users':
         return <AdminUsers />;
+      case 'release-notes':
+        return <AdminReleaseNotes />;
       case 'logs':
         return <AdminLogs />;
       default:

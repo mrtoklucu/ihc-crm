@@ -13,6 +13,7 @@ import {
 import { AppContext } from '../context/AppContext';
 import { I18nContext } from '../context/I18nContext';
 import { ThemeContext } from '../context/ThemeContext';
+import { getPublishedReleaseNotes, getReadNoteIds, markNotesAsRead } from '../utils/releaseNotes';
 import logoImg from '../assets/ihc_logo.webp';
 import zbtLogo from '../assets/zbt_media_beyaz_logo.webp';
 
@@ -48,33 +49,33 @@ const Header = () => {
   const toggleMenu = (key) => setOpenMenu(prev => (prev === key ? null : key));
 
 
-  // Sistem duyurulari (sabit). Lead bildirimleri asagida bunlarla birlestirilir.
-  const [systemNotifications, setSystemNotifications] = useState([
-    { 
-      id: 1, 
-      type: 'update', 
-      title: 'Sistem Güncellemesi', 
-      text: 'Lead yanıt süresi analizi ve silme yetkileri sisteme eklendi.', 
-      date: 'Bugün',
-      read: false 
-    },
-    { 
-      id: 2, 
-      type: 'info', 
-      title: 'Destek Hatırlatması', 
-      text: 'Her türlü hata ve öneriniz için Destek Talebi bölümünü kullanmayı unutmayın.', 
-      date: 'Dün',
-      read: false 
-    },
-    { 
-      id: 3, 
-      type: 'feature', 
-      title: 'Yeni Özellik', 
-      text: 'Dashboard artık varsayılan olarak 1 aylık veri ile açılmaktadır.', 
-      date: '2 gün önce',
-      read: true 
-    }
-  ]);
+  // Sistem duyurulari artik super admin panelinden yayinlanan guncelleme
+  // notlarindan geliyor. Onceden bu dizi kodun icinde sabitti ve aylardir
+  // guncellenmemisti.
+  const [releaseNotes, setReleaseNotes] = useState([]);
+  const [readNoteIds, setReadNoteIds] = useState(() => getReadNoteIds(currentUser?.id));
+
+  useEffect(() => {
+    let alive = true;
+    getPublishedReleaseNotes()
+      .then((notes) => { if (alive) setReleaseNotes(notes); })
+      .catch((err) => console.error('Guncelleme notlari alinamadi:', err));
+    return () => { alive = false; };
+  }, []);
+
+  const systemNotifications = useMemo(() => {
+    const read = new Set(readNoteIds);
+    return releaseNotes.map((note) => ({
+      id: `note_${note.id}`,
+      noteId: note.id,
+      type: 'update',
+      title: note.title,
+      text: String(note.body || '').split('\n').map((l) => l.trim()).filter(Boolean).join(' · '),
+      date: note.publishedAt ? formatRelativeDate(note.publishedAt) : '',
+      read: read.has(note.id),
+    }));
+  }, [releaseNotes, readNoteIds]);
+
 
   // Okundu bilgisi kullaniciya ozel, tarayicida tutulur.
   const seenKey = `tenant_${tenantSlug}_seen_leads_${currentUser?.id}`;
@@ -119,7 +120,9 @@ const Header = () => {
     } catch {
       // Depolama kapaliysa bildirimler okunmamis kalir, kritik degil.
     }
-    setSystemNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const noteIds = releaseNotes.map((n) => n.id);
+    markNotesAsRead(currentUser?.id, noteIds);
+    setReadNoteIds((prev) => Array.from(new Set([...prev, ...noteIds])));
   };
 
   useEffect(() => {
