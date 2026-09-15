@@ -76,7 +76,7 @@ const VersionBanner = () => {
 };
 
 const AdminApp = () => {
-  const { adminUser } = useContext(AdminContext);
+  const { adminUser, adminAuthReady } = useContext(AdminContext);
   
   // Set default page based on role
   const getDefaultPage = () => {
@@ -88,6 +88,16 @@ const AdminApp = () => {
   const [activePage, setActivePage] = useState(getDefaultPage());
   // Mobilde sidebar cekmece olarak acilir.
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Firebase oturumu dogrulanana kadar bekle: localStorage'daki eski kayit
+  // yuzunden panel acilip islemler "yetki yok" ile reddedilmesin.
+  if (!adminAuthReady) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--text-secondary)' }}>
+        Yükleniyor...
+      </div>
+    );
+  }
 
   if (!adminUser) {
     return <AdminLogin />;

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { db, auth } from '../config/firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, getDocs, updateDoc, addDoc, query, where, orderBy, onSnapshot, deleteDoc, writeBatch, Timestamp } from 'firebase/firestore';
 import { storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -33,10 +33,16 @@ export const AdminProvider = ({ children }) => {
   // paket herkese acik oldugu icin bu sifreler de aciktaydi. Yetki artik
   // Firebase Authentication tokenindaki superAdmin alanindan geliyor ve
   // yalnizca sunucu tarafindan verilebiliyor.
+  // localStorage yalnizca onbellek: panel acilirken ekran bos kalmasin diye
+  // okunuyor. Gercek yetki asagidaki onAuthStateChanged ile dogrulaniyor.
+  // Bu ayrim onemli: eskiden localStorage tek basina giris sayiliyordu, bu
+  // yuzden Auth oturumu olmayan kullanici panelde geziniyor ama Firestore
+  // islemleri "insufficient permissions" ile reddediliyordu.
   const [adminUser, setAdminUser] = useState(() => {
     const saved = localStorage.getItem('zbt_admin_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [adminAuthReady, setAdminAuthReady] = useState(false);
 
   const [tenants, setTenants] = useState([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -46,6 +52,40 @@ export const AdminProvider = ({ children }) => {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [adminUsers, setAdminUsers] = useState([]);
   const [loadingAdminUsers, setLoadingAdminUsers] = useState(false);
+
+  /**
+   * Panele erisim canli bir Firebase oturumuna ve superAdmin yetkisine bagli.
+   * Oturum yoksa veya yetki kalkmissa kullanici giris ekranina dusuyor.
+   */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        setAdminUser(null);
+        setAdminAuthReady(true);
+        return;
+      }
+      try {
+        const token = await firebaseUser.getIdTokenResult();
+        if (!token.claims.superAdmin) {
+          await signOut(auth);
+          setAdminUser(null);
+        } else {
+          setAdminUser((prev) => prev || {
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || 'Süper Admin',
+            role: 'superadmin',
+            level: 3,
+            uid: firebaseUser.uid,
+          });
+        }
+      } catch (err) {
+        console.error('Admin oturumu cozulemedi:', err);
+      } finally {
+        setAdminAuthReady(true);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (adminUser) {
@@ -435,6 +475,7 @@ export const AdminProvider = ({ children }) => {
     return (
     <AdminContext.Provider value={{
       adminUser,
+      adminAuthReady,
       tenants,
       loadingTenants,
       supportTickets,
